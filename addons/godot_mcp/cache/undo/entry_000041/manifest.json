@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://scripts/tactical/line_of_sight)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://scripts/tactical/line_of_sight"
+    }
+  ],
+  "id": "000041",
+  "timestamp": 1791431624.0,
+  "tool": "create_folder"
+}

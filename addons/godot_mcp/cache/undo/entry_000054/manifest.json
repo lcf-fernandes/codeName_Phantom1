@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://resources/weapons)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://resources/weapons"
+    }
+  ],
+  "id": "000054",
+  "timestamp": 1791458981.0,
+  "tool": "create_folder"
+}

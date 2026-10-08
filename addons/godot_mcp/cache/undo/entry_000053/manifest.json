@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://resources/abilities)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://resources/abilities"
+    }
+  ],
+  "id": "000053",
+  "timestamp": 1791458980.0,
+  "tool": "create_folder"
+}

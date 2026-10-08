@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://scripts/tactical/grid)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://scripts/tactical/grid"
+    }
+  ],
+  "id": "000038",
+  "timestamp": 1791431620.0,
+  "tool": "create_folder"
+}

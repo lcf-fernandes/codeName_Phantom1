@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://resources/enemies)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://resources/enemies"
+    }
+  ],
+  "id": "000056",
+  "timestamp": 1791458984.0,
+  "tool": "create_folder"
+}

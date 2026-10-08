@@ -1,0 +1,252 @@
+{
+  "args_summary": "batch_execute",
+  "files": [
+    {
+      "kind": "created",
+      "path": "res://assets/models/characters/soldiers/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/models/characters/aliens/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/models/weapons/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/models/environment/terrain/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/models/environment/buildings/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/models/environment/props/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/models/environment/cover/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/textures/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/materials/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/animations/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/audio/music/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/audio/sfx/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/audio/voice/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/fonts/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/shaders/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/vfx/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/ui/icons/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/ui/themes/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://assets/ui/cursors/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/main/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/menus/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/strategy/base/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/strategy/world_map/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/tactical/missions/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/tactical/maps/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/tactical/camera/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/tactical/grid/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/units/soldiers/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/units/enemies/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/environment/cover/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/environment/props/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/ui/hud/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/ui/menus/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/ui/widgets/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scenes/fx/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/core/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/turn_system/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/grid/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/pathfinding/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/cover/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/line_of_sight/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/combat/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/actions/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/tactical/camera/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/ai/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/units/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/abilities/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/strategy/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/ui/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://scripts/utils/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/units/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/classes/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/abilities/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/weapons/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/items/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/enemies/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/missions/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://resources/research/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://localization/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://tests/.gitkeep"
+    },
+    {
+      "kind": "created",
+      "path": "res://docs/.gitkeep"
+    }
+  ],
+  "id": "000063",
+  "timestamp": 1791461246.0,
+  "tool": "batch_execute"
+}

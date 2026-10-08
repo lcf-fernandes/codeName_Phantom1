@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://assets/audio/music)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://assets/audio/music"
+    }
+  ],
+  "id": "000011",
+  "timestamp": 1791431569.0,
+  "tool": "create_folder"
+}

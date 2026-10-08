@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://resources/missions)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://resources/missions"
+    }
+  ],
+  "id": "000057",
+  "timestamp": 1791458986.0,
+  "tool": "create_folder"
+}

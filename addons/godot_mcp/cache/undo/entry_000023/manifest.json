@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://scenes/strategy/world_map)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://scenes/strategy/world_map"
+    }
+  ],
+  "id": "000023",
+  "timestamp": 1791431588.0,
+  "tool": "create_folder"
+}

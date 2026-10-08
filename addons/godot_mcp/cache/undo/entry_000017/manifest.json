@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://assets/ui/icons)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://assets/ui/icons"
+    }
+  ],
+  "id": "000017",
+  "timestamp": 1791431581.0,
+  "tool": "create_folder"
+}

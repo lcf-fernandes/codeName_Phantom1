@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://assets/models/environment/cover)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://assets/models/environment/cover"
+    }
+  ],
+  "id": "000007",
+  "timestamp": 1791431563.0,
+  "tool": "create_folder"
+}

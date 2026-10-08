@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://scenes/fx)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://scenes/fx"
+    }
+  ],
+  "id": "000035",
+  "timestamp": 1791431612.0,
+  "tool": "create_folder"
+}

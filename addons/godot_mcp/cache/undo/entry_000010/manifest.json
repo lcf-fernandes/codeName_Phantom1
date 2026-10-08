@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://assets/animations)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://assets/animations"
+    }
+  ],
+  "id": "000010",
+  "timestamp": 1791431566.0,
+  "tool": "create_folder"
+}

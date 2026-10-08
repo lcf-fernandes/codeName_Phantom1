@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://scripts/abilities)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://scripts/abilities"
+    }
+  ],
+  "id": "000047",
+  "timestamp": 1791431638.0,
+  "tool": "create_folder"
+}

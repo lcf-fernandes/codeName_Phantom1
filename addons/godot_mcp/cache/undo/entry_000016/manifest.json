@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://assets/vfx)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://assets/vfx"
+    }
+  ],
+  "id": "000016",
+  "timestamp": 1791431580.0,
+  "tool": "create_folder"
+}

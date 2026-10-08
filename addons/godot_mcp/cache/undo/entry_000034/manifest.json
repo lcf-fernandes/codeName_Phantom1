@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://scenes/ui/widgets)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://scenes/ui/widgets"
+    }
+  ],
+  "id": "000034",
+  "timestamp": 1791431610.0,
+  "tool": "create_folder"
+}

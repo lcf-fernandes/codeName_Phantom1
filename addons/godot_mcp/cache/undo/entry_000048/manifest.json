@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://scripts/strategy)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://scripts/strategy"
+    }
+  ],
+  "id": "000048",
+  "timestamp": 1791431639.0,
+  "tool": "create_folder"
+}

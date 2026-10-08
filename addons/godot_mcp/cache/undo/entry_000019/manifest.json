@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://assets/ui/cursors)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://assets/ui/cursors"
+    }
+  ],
+  "id": "000019",
+  "timestamp": 1791431583.0,
+  "tool": "create_folder"
+}

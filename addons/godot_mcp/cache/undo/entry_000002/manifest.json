@@ -1,0 +1,13 @@
+{
+  "args_summary": "create_folder(path=res://assets/models/characters/aliens)",
+  "files": [
+    {
+      "is_dir": true,
+      "kind": "created",
+      "path": "res://assets/models/characters/aliens"
+    }
+  ],
+  "id": "000002",
+  "timestamp": 1791431555.0,
+  "tool": "create_folder"
+}
