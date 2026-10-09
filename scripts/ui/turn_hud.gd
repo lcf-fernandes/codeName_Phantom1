@@ -39,7 +39,7 @@ func _process(_delta: float) -> void:
 
 
 func _refresh() -> void:
-	var side_name: String = "Jogador" if _turn_manager.side == TurnManager.Side.PLAYER else "Inimigos"
+	var side_name: String = "Jogador" if _turn_manager.side == TurnManager.TurnSide.PLAYER else "Inimigos"
 	var text: String = "Turno %d · %s" % [_turn_manager.turn_number, side_name]
 
 	var unit: Unit = _selection.selected_unit

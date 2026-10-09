@@ -35,7 +35,7 @@ func _input(event: InputEvent) -> void:
 	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 	if mouse_event == null or not mouse_event.pressed:
 		return
-	if _turn_manager.side == TurnManager.Side.ENEMY:
+	if _turn_manager.side == TurnManager.TurnSide.ENEMY:
 		print("Clique ignorado: turno dos inimigos")
 		get_viewport().set_input_as_handled()
 		return
@@ -84,11 +84,11 @@ func _on_move_finished(unit: Unit) -> void:
 
 # Turno dos inimigos: esconde o alcance. Volta ao jogador: reseleciona o soldado
 # para mostrar o marcador e o alcance com os PA renovados.
-func _on_turn_started(_turn_number: int, side: TurnManager.Side) -> void:
+func _on_turn_started(_turn_number: int, side: TurnManager.TurnSide) -> void:
 	var unit: Unit = _selection.selected_unit
 	if unit == null:
 		return
-	if side == TurnManager.Side.ENEMY:
+	if side == TurnManager.TurnSide.ENEMY:
 		_movement_range.hide_range()
 	else:
 		_selection.select_unit(unit)
