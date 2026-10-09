@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://assets/models/environment/buildings)",
+  "args_summary": "edit_script",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://assets/models/environment/buildings"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000005/files/scripts/units/unit.gd",
+      "kind": "snapshot",
+      "path": "res://scripts/units/unit.gd"
     }
   ],
   "id": "000005",
-  "timestamp": 1791431558.0,
-  "tool": "create_folder"
+  "timestamp": 1791548581.0,
+  "tool": "edit_script"
 }

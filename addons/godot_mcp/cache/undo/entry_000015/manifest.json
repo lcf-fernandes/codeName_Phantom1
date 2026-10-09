@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://assets/shaders)",
+  "args_summary": "edit_script",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://assets/shaders"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000015/files/scripts/tactical/unit_mover.gd",
+      "kind": "snapshot",
+      "path": "res://scripts/tactical/unit_mover.gd"
     }
   ],
   "id": "000015",
-  "timestamp": 1791431578.0,
-  "tool": "create_folder"
+  "timestamp": 1791573525.0,
+  "tool": "edit_script"
 }

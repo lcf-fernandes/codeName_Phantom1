@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://assets/models/characters/soldiers)",
+  "args_summary": "edit_script",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://assets/models/characters/soldiers"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000001/files/scripts/tactical/movement_range.gd",
+      "kind": "snapshot",
+      "path": "res://scripts/tactical/movement_range.gd"
     }
   ],
   "id": "000001",
-  "timestamp": 1791431554.0,
-  "tool": "create_folder"
+  "timestamp": 1791548566.0,
+  "tool": "edit_script"
 }

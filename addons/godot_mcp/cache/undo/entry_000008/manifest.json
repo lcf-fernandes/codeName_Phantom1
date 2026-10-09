@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://assets/textures)",
+  "args_summary": "edit_script",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://assets/textures"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000008/files/scripts/tactical/movement_range.gd",
+      "kind": "snapshot",
+      "path": "res://scripts/tactical/movement_range.gd"
     }
   ],
   "id": "000008",
-  "timestamp": 1791431564.0,
-  "tool": "create_folder"
+  "timestamp": 1791572938.0,
+  "tool": "edit_script"
 }

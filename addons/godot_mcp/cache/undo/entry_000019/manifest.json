@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://assets/ui/cursors)",
+  "args_summary": "edit_script",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://assets/ui/cursors"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000019/files/scripts/tactical/unit_mover.gd",
+      "kind": "snapshot",
+      "path": "res://scripts/tactical/unit_mover.gd"
     }
   ],
   "id": "000019",
-  "timestamp": 1791431583.0,
-  "tool": "create_folder"
+  "timestamp": 1791573534.0,
+  "tool": "edit_script"
 }

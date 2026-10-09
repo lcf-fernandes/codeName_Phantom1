@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://scenes/tactical/missions)",
+  "args_summary": "add_node(scene_path=res://scenes/tactical/maps/test_level.tscn, node_name=TurnHud, node_type=CanvasLayer)",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://scenes/tactical/missions"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000024/files/scenes/tactical/maps/test_level.tscn",
+      "kind": "snapshot",
+      "path": "res://scenes/tactical/maps/test_level.tscn"
     }
   ],
   "id": "000024",
-  "timestamp": 1791431591.0,
-  "tool": "create_folder"
+  "timestamp": 1791573551.0,
+  "tool": "add_node"
 }

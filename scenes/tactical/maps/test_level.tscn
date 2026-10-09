@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://cv735hcfo7lji"]
+
+[ext_resource type="Script" uid="uid://cyispann6qj3v" path="res://scripts/tactical/grid/grid_floor.gd" id="1_wljeq"]
+[ext_resource type="Environment" path="res://scenes/tactical/maps/test_level_environment.tres" id="2_lnqdr"]
+[ext_resource type="Script" uid="uid://f3bihqipolar" path="res://scripts/tactical/grid/grid_manager.gd" id="3_bbptu"]
+[ext_resource type="Script" uid="uid://bavc87hjlxbbf" path="res://scripts/units/squad_spawner.gd" id="4_cskko"]
+[ext_resource type="Script" uid="uid://xr2c8wkqbsuc" path="res://scripts/units/enemy_spawner.gd" id="5_0xox2"]
+[ext_resource type="Script" uid="uid://t83xthb73qh7" path="res://scripts/tactical/selection_controller.gd" id="6_eay6l"]
+[ext_resource type="Script" uid="uid://ciidwbohgaom0" path="res://scripts/tactical/movement_range.gd" id="7_8yb0i"]
+[ext_resource type="Script" uid="uid://dildgha15pnrv" path="res://scripts/tactical/unit_mover.gd" id="8_5jd15"]
+[ext_resource type="Script" uid="uid://bar21oli1v33j" path="res://scripts/tactical/turn_system/turn_manager.gd" id="9_nyvm0"]
+[ext_resource type="Script" uid="uid://cjfg0f17ott18" path="res://scripts/ui/turn_hud.gd" id="10_rfiu3"]
+
+[node name="TestLevel" type="Node3D" unique_id=238378437]
+
+[node name="GridFloor" type="Node3D" parent="." unique_id=267646674]
+script = ExtResource("1_wljeq")
+
+[node name="Camera" type="Camera3D" parent="." unique_id=1481658930]
+transform = Transform3D(1, 0, 0, 0, 0.57357645, 0.81915206, 0, -0.81915206, 0.57357645, 0, 31.13, 21.8)
+current = true
+fov = 40.0
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1636436937]
+transform = Transform3D(0.81915206, -0.46984634, 0.32898995, 0, 0.57357645, 0.81915206, -0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1594604360]
+environment = ExtResource("2_lnqdr")
+
+[node name="GridManager" type="Node3D" parent="." unique_id=557974579]
+script = ExtResource("3_bbptu")
+
+[node name="Squad" type="Node3D" parent="." unique_id=1320438631]
+script = ExtResource("4_cskko")
+
+[node name="Enemies" type="Node3D" parent="." unique_id=396353534]
+script = ExtResource("5_0xox2")
+
+[node name="SelectionController" type="Node3D" parent="." unique_id=863304068]
+script = ExtResource("6_eay6l")
+
+[node name="MovementRange" type="Node3D" parent="." unique_id=344678348]
+script = ExtResource("7_8yb0i")
+
+[node name="UnitMover" type="Node3D" parent="." unique_id=1107315352]
+script = ExtResource("8_5jd15")
+
+[node name="TurnManager" type="Node" parent="." unique_id=537229141]
+script = ExtResource("9_nyvm0")
+
+[node name="TurnHud" type="CanvasLayer" parent="." unique_id=156892678]
+script = ExtResource("10_rfiu3")

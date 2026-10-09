@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://scenes/menus)",
+  "args_summary": "edit_script",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://scenes/menus"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000021/files/scripts/tactical/movement_range.gd",
+      "kind": "snapshot",
+      "path": "res://scripts/tactical/movement_range.gd"
     }
   ],
   "id": "000021",
-  "timestamp": 1791431585.0,
-  "tool": "create_folder"
+  "timestamp": 1791573540.0,
+  "tool": "edit_script"
 }

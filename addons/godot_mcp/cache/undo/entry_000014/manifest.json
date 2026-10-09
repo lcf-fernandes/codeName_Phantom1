@@ -1,13 +1,12 @@
 {
-  "args_summary": "create_folder(path=res://assets/fonts)",
+  "args_summary": "create_script(path=res://scripts/tactical/turn_system/turn_manager.gd)",
   "files": [
     {
-      "is_dir": true,
       "kind": "created",
-      "path": "res://assets/fonts"
+      "path": "res://scripts/tactical/turn_system/turn_manager.gd"
     }
   ],
   "id": "000014",
-  "timestamp": 1791431576.0,
-  "tool": "create_folder"
+  "timestamp": 1791573516.0,
+  "tool": "create_script"
 }

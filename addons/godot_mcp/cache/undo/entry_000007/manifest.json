@@ -1,13 +1,13 @@
 {
-  "args_summary": "create_folder(path=res://assets/models/environment/cover)",
+  "args_summary": "write_file(path=res://scripts/tactical/unit_mover.gd)",
   "files": [
     {
-      "is_dir": true,
-      "kind": "created",
-      "path": "res://assets/models/environment/cover"
+      "backup": "res://addons/godot_mcp/cache/undo/entry_000007/files/scripts/tactical/unit_mover.gd",
+      "kind": "snapshot",
+      "path": "res://scripts/tactical/unit_mover.gd"
     }
   ],
   "id": "000007",
-  "timestamp": 1791431563.0,
-  "tool": "create_folder"
+  "timestamp": 1791548593.0,
+  "tool": "write_file"
 }
