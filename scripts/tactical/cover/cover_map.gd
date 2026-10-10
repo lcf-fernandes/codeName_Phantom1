@@ -25,6 +25,8 @@ const UNITS_GROUP: StringName = &"units"
 @export var low_color: Color = Color(0.62, 0.55, 0.47)
 ## Cor da cobertura alta (cinza-escuro).
 @export var high_color: Color = Color(0.25, 0.26, 0.28)
+## Quando verdadeiro, roda ao iniciar o teste de get_cover_against e imprime o resultado.
+@export var debug_cover_test: bool = true
 
 var _grid_manager: GridManager
 
@@ -40,6 +42,9 @@ func _ready() -> void:
 	for cell: Vector2i in high_cover_cells:
 		_build_shape(cell, high_height, high_color, "Alta")
 
+	if debug_cover_test:
+		_run_cover_test()
+
 
 ## Tipo de cobertura da célula (alta tem prioridade se a célula estiver nas duas listas).
 func get_cover(cell: Vector2i) -> CoverType:
@@ -53,6 +58,82 @@ func get_cover(cell: Vector2i) -> CoverType:
 ## Verdadeiro para qualquer célula com cobertura.
 func is_blocked(cell: Vector2i) -> bool:
 	return get_cover(cell) != CoverType.NONE
+
+
+## Cobertura que protege o defensor contra um ataque vindo da célula do atacante.
+##
+## Regra:
+## - Se defensor == atacante, devolve NONE.
+## - dx = atacante.x - defensor.x e dy = atacante.y - defensor.y.
+## - Se |dx| > |dy|, o lado do ataque é leste (dx > 0) ou oeste (dx < 0).
+##   Se |dy| > |dx|, o lado é +y (dy > 0) ou -y (dy < 0).
+##   Se |dx| == |dy| (e não for zero), valem os dois lados: o do eixo x e o do eixo y.
+## - Para cada lado válido, olha a célula vizinha do defensor naquele lado e usa o get_cover dela.
+##   Devolve a melhor entre os lados válidos: HIGH acima de LOW, e LOW acima de NONE.
+##
+## Limitações por enquanto: ignora a linha de visão (o que há entre os dois, além do vizinho)
+## e o flanco (o ângulo exato do ataque); só importa a cobertura nas células vizinhas do defensor.
+func get_cover_against(defender: Vector2i, attacker: Vector2i) -> CoverType:
+	if defender == attacker:
+		return CoverType.NONE
+
+	var dx: int = attacker.x - defender.x
+	var dy: int = attacker.y - defender.y
+	var best: CoverType = CoverType.NONE
+
+	# Lado do eixo x (leste/oeste): vale quando |dx| >= |dy| (inclui o empate).
+	if absi(dx) >= absi(dy):
+		best = _better_cover(best, get_cover(defender + Vector2i(signi(dx), 0)))
+	# Lado do eixo y (+y/-y): vale quando |dy| >= |dx| (inclui o empate).
+	if absi(dy) >= absi(dx):
+		best = _better_cover(best, get_cover(defender + Vector2i(0, signi(dy))))
+
+	return best
+
+
+# A melhor das duas coberturas (NONE < LOW < HIGH, na ordem do enum).
+func _better_cover(a: CoverType, b: CoverType) -> CoverType:
+	return a if a >= b else b
+
+
+func _cover_name(cover: CoverType) -> String:
+	return String(CoverType.keys()[cover])
+
+
+# Roda os 15 casos de get_cover_against e imprime cada resultado e o total.
+func _run_cover_test() -> void:
+	var cases: Array[Dictionary] = [
+		{"defender": Vector2i(4, 4), "attacker": Vector2i(4, 8), "expected": CoverType.LOW},
+		{"defender": Vector2i(4, 4), "attacker": Vector2i(4, 0), "expected": CoverType.NONE},
+		{"defender": Vector2i(4, 4), "attacker": Vector2i(0, 4), "expected": CoverType.NONE},
+		{"defender": Vector2i(3, 6), "attacker": Vector2i(3, 2), "expected": CoverType.LOW},
+		{"defender": Vector2i(3, 6), "attacker": Vector2i(3, 10), "expected": CoverType.NONE},
+		{"defender": Vector2i(3, 4), "attacker": Vector2i(6, 7), "expected": CoverType.LOW},
+		{"defender": Vector2i(8, 4), "attacker": Vector2i(8, 9), "expected": CoverType.HIGH},
+		{"defender": Vector2i(8, 4), "attacker": Vector2i(9, 9), "expected": CoverType.HIGH},
+		{"defender": Vector2i(8, 4), "attacker": Vector2i(11, 4), "expected": CoverType.NONE},
+		{"defender": Vector2i(9, 5), "attacker": Vector2i(5, 5), "expected": CoverType.HIGH},
+		{"defender": Vector2i(9, 5), "attacker": Vector2i(9, 0), "expected": CoverType.NONE},
+		{"defender": Vector2i(8, 6), "attacker": Vector2i(4, 2), "expected": CoverType.HIGH},
+		{"defender": Vector2i(8, 6), "attacker": Vector2i(4, 6), "expected": CoverType.LOW},
+		{"defender": Vector2i(8, 6), "attacker": Vector2i(8, 2), "expected": CoverType.HIGH},
+		{"defender": Vector2i(4, 4), "attacker": Vector2i(4, 4), "expected": CoverType.NONE},
+	]
+
+	print("[Coberturas] teste de get_cover_against:")
+	var passed: int = 0
+	for i: int in cases.size():
+		var defender: Vector2i = cases[i]["defender"]
+		var attacker: Vector2i = cases[i]["attacker"]
+		var expected: CoverType = cases[i]["expected"]
+		var result: CoverType = get_cover_against(defender, attacker)
+		var ok: bool = result == expected
+		if ok:
+			passed += 1
+		print("  %2d. defensor %s, atacante %s -> %s (esperado %s) %s" % [
+			i + 1, defender, attacker, _cover_name(result), _cover_name(expected), "OK" if ok else "FALHA"
+		])
+	print("[Coberturas] testes: %d/%d OK" % [passed, cases.size()])
 
 
 # Avisa (push_warning e print) sobre células fora da grade, repetidas ou em linhas de início.
