@@ -11,6 +11,8 @@ const UNITS_GROUP: StringName = &"units"
 @export var selection_controller_path: NodePath = ^"../SelectionController"
 ## Caminho até o GridManager.
 @export var grid_manager_path: NodePath = ^"../GridManager"
+## Caminho até o CoverMap (células com cobertura bloqueiam o movimento).
+@export var cover_map_path: NodePath = ^"../CoverMap"
 ## Lado de cada quadrado de alcance, em metros.
 @export var tile_size: float = 1.8
 ## Altura dos quadrados acima da superfície do chão, em metros.
@@ -19,6 +21,7 @@ const UNITS_GROUP: StringName = &"units"
 @export var tile_color: Color = Color(0.45, 0.75, 1.0, 0.45)
 
 var _grid_manager: GridManager
+var _cover_map: CoverMap
 var _tile_mesh: PlaneMesh
 var _tile_material: StandardMaterial3D
 var _tiles: Array[MeshInstance3D] = []
@@ -26,8 +29,10 @@ var _tiles: Array[MeshInstance3D] = []
 
 func _ready() -> void:
 	_grid_manager = get_node(grid_manager_path) as GridManager
+	_cover_map = get_node(cover_map_path) as CoverMap
 	var selection: SelectionController = get_node(selection_controller_path) as SelectionController
 	assert(_grid_manager != null, "MovementRange: grid_manager_path não aponta para um GridManager.")
+	assert(_cover_map != null, "MovementRange: cover_map_path não aponta para um CoverMap.")
 	assert(selection != null, "MovementRange: selection_controller_path não aponta para um SelectionController.")
 
 	_tile_mesh = PlaneMesh.new()
@@ -88,7 +93,7 @@ func _search(unit: Unit, parents: Dictionary[Vector2i, Vector2i]) -> Dictionary[
 			continue
 		for direction: Vector2i in DIRECTIONS:
 			var next: Vector2i = current + direction
-			if costs.has(next) or occupied.has(next) or not _grid_manager.is_inside(next):
+			if costs.has(next) or occupied.has(next) or _cover_map.is_blocked(next) or not _grid_manager.is_inside(next):
 				continue
 			costs[next] = cost + 1
 			reachable[next] = cost + 1
