@@ -13,6 +13,8 @@ const UNITS_GROUP: StringName = &"units"
 @export var cover_map_path: NodePath = ^"../CoverMap"
 ## Caminho até o TurnManager.
 @export var turn_manager_path: NodePath = ^"../TurnManager"
+## Caminho até o CombatCalc (distância e chance de acerto).
+@export var combat_calc_path: NodePath = ^"../CombatCalc"
 ## Camada de colisão das unidades (camada 2).
 @export_flags_3d_physics var unit_collision_mask: int = 2
 ## Comprimento do raio, em metros.
@@ -25,6 +27,7 @@ var _camera: Camera3D
 var _selection: SelectionController
 var _cover_map: CoverMap
 var _turn_manager: TurnManager
+var _combat_calc: CombatCalc
 var _mouse_pos: Vector2 = Vector2.ZERO
 var _last_enemy: Unit = null
 
@@ -34,10 +37,12 @@ func _ready() -> void:
 	_selection = get_node(selection_controller_path) as SelectionController
 	_cover_map = get_node(cover_map_path) as CoverMap
 	_turn_manager = get_node(turn_manager_path) as TurnManager
+	_combat_calc = get_node(combat_calc_path) as CombatCalc
 	assert(_camera != null, "TargetPreview: camera_path não aponta para uma Camera3D.")
 	assert(_selection != null, "TargetPreview: selection_controller_path não aponta para um SelectionController.")
 	assert(_cover_map != null, "TargetPreview: cover_map_path não aponta para um CoverMap.")
 	assert(_turn_manager != null, "TargetPreview: turn_manager_path não aponta para um TurnManager.")
+	assert(_combat_calc != null, "TargetPreview: combat_calc_path não aponta para um CombatCalc.")
 	_mouse_pos = get_viewport().get_mouse_position()
 
 
@@ -62,7 +67,11 @@ func _process(_delta: float) -> void:
 		return
 
 	var cover: CoverMap.CoverType = _cover_map.get_cover_against(enemy.cell, soldier.cell)
-	hover_text = "%s · cobertura contra %s: %s" % [enemy.unit_name, soldier.unit_name, _cover_label(cover)]
+	var distance: int = _combat_calc.get_distance(soldier.cell, enemy.cell)
+	var hit_chance: int = _combat_calc.get_hit_chance(soldier.cell, enemy.cell)
+	hover_text = "%s · cobertura contra %s: %s · distância %d · chance de acerto %d%%" % [
+		enemy.unit_name, soldier.unit_name, _cover_label(cover), distance, hit_chance
+	]
 
 	# Só imprime quando o inimigo sob o mouse muda.
 	if enemy != _last_enemy:

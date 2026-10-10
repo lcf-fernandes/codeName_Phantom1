@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://cjfg0f17ott18" path="res://scripts/ui/turn_hud.gd" id="10_rfiu3"]
 [ext_resource type="Script" uid="uid://xr6lk3sapsu" path="res://scripts/tactical/cover/cover_map.gd" id="11_0ihwd"]
 [ext_resource type="Script" uid="uid://bergwmlyb2wf2" path="res://scripts/tactical/target_preview.gd" id="12_7yii5"]
+[ext_resource type="Script" uid="uid://cj18sgo2n3y1w" path="res://scripts/tactical/combat/combat_calc.gd" id="13_hn5mr"]
 
 [node name="TestLevel" type="Node3D" unique_id=238378437]
 
@@ -59,3 +60,6 @@ script = ExtResource("11_0ihwd")
 
 [node name="TargetPreview" type="Node3D" parent="." unique_id=1629287647]
 script = ExtResource("12_7yii5")
+
+[node name="CombatCalc" type="Node" parent="." unique_id=1092532922]
+script = ExtResource("13_hn5mr")
