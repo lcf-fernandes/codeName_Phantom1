@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://bar21oli1v33j" path="res://scripts/tactical/turn_system/turn_manager.gd" id="9_nyvm0"]
 [ext_resource type="Script" uid="uid://cjfg0f17ott18" path="res://scripts/ui/turn_hud.gd" id="10_rfiu3"]
 [ext_resource type="Script" uid="uid://xr6lk3sapsu" path="res://scripts/tactical/cover/cover_map.gd" id="11_0ihwd"]
+[ext_resource type="Script" uid="uid://bergwmlyb2wf2" path="res://scripts/tactical/target_preview.gd" id="12_7yii5"]
 
 [node name="TestLevel" type="Node3D" unique_id=238378437]
 
@@ -55,3 +56,6 @@ script = ExtResource("10_rfiu3")
 
 [node name="CoverMap" type="Node3D" parent="." unique_id=283894841]
 script = ExtResource("11_0ihwd")
+
+[node name="TargetPreview" type="Node3D" parent="." unique_id=1629287647]
+script = ExtResource("12_7yii5")
