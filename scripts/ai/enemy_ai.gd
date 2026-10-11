@@ -1,7 +1,7 @@
 class_name EnemyAI
 extends Node
 ## IA mínima dos inimigos: no turno deles, cada inimigo vivo anda em direção ao soldado
-## vivo mais próximo. Sem ataque, sem revide e sem condição de vitória.
+## vivo mais próximo e, se ficar ao alcance, ataca. Sem condição de vitória ou derrota.
 
 const UNITS_GROUP: StringName = &"units"
 
@@ -11,16 +11,23 @@ const UNITS_GROUP: StringName = &"units"
 @export var combat_calc_path: NodePath = ^"../CombatCalc"
 ## Espera entre um inimigo e o próximo, em segundos.
 @export var delay_between_enemies: float = 0.3
+## Distância máxima (em passos de grade) para o inimigo atacar o alvo.
+@export var attack_range: int = 5
+## Caminho até o AttackController (resolve o ataque).
+@export var attack_controller_path: NodePath = ^"../AttackController"
 
 var _movement_range: MovementRange
 var _combat_calc: CombatCalc
+var _attack_controller: AttackController
 
 
 func _ready() -> void:
 	_movement_range = get_node(movement_range_path) as MovementRange
 	_combat_calc = get_node(combat_calc_path) as CombatCalc
+	_attack_controller = get_node(attack_controller_path) as AttackController
 	assert(_movement_range != null, "EnemyAI: movement_range_path não aponta para um MovementRange.")
 	assert(_combat_calc != null, "EnemyAI: combat_calc_path não aponta para um CombatCalc.")
+	assert(_attack_controller != null, "EnemyAI: attack_controller_path não aponta para um AttackController.")
 
 
 ## Roda o turno dos inimigos: renova os PA de todos e move um inimigo por vez, em ordem de nome.
@@ -52,8 +59,22 @@ func run_enemy_turn() -> void:
 				enemy.cell.x, enemy.cell.y, path.size()
 			])
 
+		_try_attack(enemy, target)
+
 		if i < enemies.size() - 1:
 			await get_tree().create_timer(delay_between_enemies).timeout
+
+
+# Depois do movimento (ou de ficar parado): ataca o alvo se ainda houver PA, o alvo estiver vivo
+# e a distância for <= attack_range. No máximo um ataque por inimigo por turno.
+func _try_attack(enemy: Unit, target: Unit) -> void:
+	var distance: int = _combat_calc.get_distance(enemy.cell, target.cell)
+	var can_attack: bool = enemy.action_points >= _attack_controller.attack_cost \
+			and is_instance_valid(target) and target.hp > 0 and distance <= attack_range
+	if can_attack:
+		_attack_controller.perform_attack(enemy, target)
+	else:
+		print("IA: %s fora de alcance (distância %d)" % [enemy.unit_name, distance])
 
 
 # Unidades vivas do lado informado (as mortas saem do grupo "units").

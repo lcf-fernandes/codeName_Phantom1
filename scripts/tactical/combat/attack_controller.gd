@@ -57,37 +57,44 @@ func _on_enemy_clicked(enemy: Unit) -> void:
 		print("%s sem PA" % soldier.unit_name)
 		return
 
-	var chance: int = _combat_calc.get_hit_chance(soldier.cell, enemy.cell)
-	var roll: int = forced_roll if forced_roll != 0 else randi_range(1, 100)
-	var hit: bool = roll <= chance
-
-	# Guarda o que a morte pode apagar (a unidade é liberada no fim do quadro).
-	var enemy_name: String = enemy.unit_name
-	var enemy_cell: Vector2i = enemy.cell
-	var enemy_position: Vector3 = enemy.global_position
-	var hp_before: int = enemy.hp
-
-	soldier.spend_action(attack_cost)
-	if hit:
-		enemy.take_damage(attack_damage)
-	var damage_dealt: int = hp_before - enemy.hp
-
-	print("Ataque: %s -> %s | chance %d%% | rolagem %d -> %s | dano %d | hp %d/%d" % [
-		soldier.unit_name, enemy_name, chance, roll, "ACERTOU" if hit else "ERROU",
-		damage_dealt, enemy.hp, enemy.max_hp
-	])
-	# A unidade em si não imprime nada ao morrer (isso é feito pelo DebugTools nos atalhos de teste).
-	if enemy.hp <= 0:
-		print("%s morreu em (%d, %d)" % [enemy_name, enemy_cell.x, enemy_cell.y])
-
-	if hit:
-		_show_feedback(enemy_position, "-%d" % damage_dealt, Color(1.0, 0.35, 0.25))
-	else:
-		_show_feedback(enemy_position, "ERROU", Color(0.9, 0.9, 0.9))
+	perform_attack(soldier, enemy)
 
 	# Como depois de um movimento: o marcador continua e o alcance é recalculado
 	# (com 0 PA os quadrados azuis somem); o HUD acompanha os PA sozinho.
 	_selection.select_unit(soldier)
+
+
+## Resolve um ataque: calcula a chance, faz a rolagem (respeitando forced_roll), gasta os PA do
+## atacante, aplica o dano, imprime o resultado, mostra o texto flutuante e imprime a morte,
+## se o defensor morrer. Não faz nenhuma checagem de turno nem de alcance: quem chama decide.
+func perform_attack(attacker: Unit, defender: Unit) -> void:
+	var chance: int = _combat_calc.get_hit_chance(attacker.cell, defender.cell)
+	var roll: int = forced_roll if forced_roll != 0 else randi_range(1, 100)
+	var hit: bool = roll <= chance
+
+	# Guarda o que a morte pode apagar (a unidade é liberada no fim do quadro).
+	var defender_name: String = defender.unit_name
+	var defender_cell: Vector2i = defender.cell
+	var defender_position: Vector3 = defender.global_position
+	var hp_before: int = defender.hp
+
+	attacker.spend_action(attack_cost)
+	if hit:
+		defender.take_damage(attack_damage)
+	var damage_dealt: int = hp_before - defender.hp
+
+	print("Ataque: %s -> %s | chance %d%% | rolagem %d -> %s | dano %d | hp %d/%d" % [
+		attacker.unit_name, defender_name, chance, roll, "ACERTOU" if hit else "ERROU",
+		damage_dealt, defender.hp, defender.max_hp
+	])
+	# A unidade em si não imprime nada ao morrer (isso é feito pelo DebugTools nos atalhos de teste).
+	if defender.hp <= 0:
+		print("%s morreu em (%d, %d)" % [defender_name, defender_cell.x, defender_cell.y])
+
+	if hit:
+		_show_feedback(defender_position, "-%d" % damage_dealt, Color(1.0, 0.35, 0.25))
+	else:
+		_show_feedback(defender_position, "ERROU", Color(0.9, 0.9, 0.9))
 
 
 # Texto flutuante sobre o inimigo: sobe um pouco e some. Criado e removido por este nó.

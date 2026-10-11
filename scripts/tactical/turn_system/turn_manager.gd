@@ -13,8 +13,6 @@ signal turn_ended(turn_number: int, side: TurnSide)
 
 const UNITS_GROUP: StringName = &"units"
 
-## Duração do turno dos inimigos (por enquanto só uma espera), em segundos.
-@export var enemy_turn_duration: float = 0.5
 ## Caminho até o EnemyAI (quem joga o turno dos inimigos).
 @export var enemy_ai_path: NodePath = ^"../EnemyAI"
 
@@ -55,7 +53,7 @@ func end_player_turn() -> void:
 
 	side = TurnSide.ENEMY
 	turn_started.emit(turn_number, TurnSide.ENEMY)
-	print("Turno dos inimigos (sem ação por enquanto)")
+	print("Turno dos inimigos")
 	await _enemy_ai.run_enemy_turn()
 	turn_ended.emit(turn_number, TurnSide.ENEMY)
 
