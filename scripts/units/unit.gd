@@ -8,6 +8,10 @@ enum Team { SQUAD, ENEMY }
 
 ## Emitido quando a unidade termina de percorrer um caminho.
 signal move_finished(unit: Unit)
+## Emitido quando os pontos de vida mudam.
+signal health_changed(unit: Unit, hp: int, max_hp: int)
+## Emitido uma única vez, quando os pontos de vida chegam a 0.
+signal died(unit: Unit)
 
 ## Nome exibido da unidade.
 @export var unit_name: String = "Unidade"
@@ -21,6 +25,8 @@ signal move_finished(unit: Unit)
 @export var move_speed: float = 8.0
 ## Máximo de pontos de ação (PA) por turno.
 @export var max_action_points: int = 2
+## Máximo de pontos de vida (HP).
+@export var max_hp: int = 4
 
 ## Célula atual da unidade na grade.
 var cell: Vector2i = Vector2i.ZERO
@@ -28,6 +34,10 @@ var cell: Vector2i = Vector2i.ZERO
 var is_moving: bool = false
 ## Pontos de ação restantes neste turno.
 var action_points: int = max_action_points
+## Pontos de vida atuais (0 = morta).
+var hp: int = max_hp
+
+var _hp_label: Label3D
 
 var _grid_manager: GridManager
 
@@ -40,6 +50,9 @@ func _ready() -> void:
 	_body.material_override = material
 	add_to_group("units")
 	reset_actions()
+	hp = max_hp
+	_build_hp_label()
+	health_changed.connect(_on_health_changed)
 
 
 ## Coloca a unidade na célula informada, usando o GridManager para obter a posição.
@@ -83,3 +96,41 @@ func spend_action(cost: int = 1) -> void:
 ## Devolve todos os pontos de ação (início do turno).
 func reset_actions() -> void:
 	action_points = max_action_points
+
+
+## Causa dano. Ignora valores <= 0 e dano em unidade já morta; o HP nunca fica abaixo de 0.
+## Ao chegar a 0: sai do grupo "units" (deixa de bloquear células) antes de qualquer outra
+## coisa, emite health_changed e died (uma única vez) e então libera a unidade com queue_free().
+func take_damage(amount: int) -> void:
+	if amount <= 0 or hp <= 0:
+		return
+
+	var new_hp: int = maxi(hp - amount, 0)
+	if new_hp == 0:
+		remove_from_group("units")
+
+	hp = new_hp
+	health_changed.emit(self, hp, max_hp)
+
+	if hp == 0:
+		died.emit(self)
+		queue_free()
+
+
+# Label3D com o HP acima da unidade (2,2 m acima do chão), sempre virado para a câmera e com borda.
+func _build_hp_label() -> void:
+	_hp_label = Label3D.new()
+	_hp_label.name = "HpLabel"
+	_hp_label.position = Vector3(0.0, 2.2, 0.0)
+	_hp_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_hp_label.font_size = 64
+	_hp_label.outline_size = 16
+	_hp_label.outline_modulate = Color.BLACK
+	_hp_label.modulate = Color.WHITE
+	_hp_label.text = "%d/%d" % [hp, max_hp]
+	add_child(_hp_label)
+
+
+# Atualiza o texto do Label3D com o HP atual.
+func _on_health_changed(_unit: Unit, new_hp: int, new_max_hp: int) -> void:
+	_hp_label.text = "%d/%d" % [new_hp, new_max_hp]

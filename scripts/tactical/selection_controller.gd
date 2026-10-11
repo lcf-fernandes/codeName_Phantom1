@@ -11,6 +11,8 @@ signal selection_cleared
 ## Emitido quando o clique esquerdo cai no chão (fora de qualquer unidade).
 ## A célula pode estar fora da grade; quem recebe decide o que fazer (inclusive limpar a seleção).
 signal cell_clicked(cell: Vector2i)
+## Emitido quando o clique esquerdo acerta um inimigo (que continua não selecionável).
+signal enemy_clicked(unit: Unit)
 
 ## Caminho até a câmera da fase.
 @export var camera_path: NodePath = ^"../Camera"
@@ -53,6 +55,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		select_unit(unit)
 	else:
 		print("Inimigo clicado (não selecionável): %s" % unit.unit_name)
+		enemy_clicked.emit(unit)
 
 
 ## Seleciona o soldado e move o marcador para a célula dele.
@@ -61,20 +64,28 @@ func select_unit(unit: Unit) -> void:
 	_marker.global_position = _grid_manager.cell_to_world(unit.cell) + Vector3(0.0, marker_height, 0.0)
 	_marker.visible = true
 	print("Selecionado: %s (%d, %d)" % [unit.unit_name, unit.cell.x, unit.cell.y])
+	if not unit.died.is_connected(_on_unit_died):
+		unit.died.connect(_on_unit_died)
 	unit_selected.emit(unit)
 
 
-## Limpa a seleção e esconde o marcador.
-func clear_selection() -> void:
+## Limpa a seleção e esconde o marcador (a mensagem impressa pode ser trocada).
+func clear_selection(message: String = "Seleção limpa") -> void:
 	selected_unit = null
 	_marker.visible = false
-	print("Seleção limpa")
+	print(message)
 	selection_cleared.emit()
 
 
 ## Esconde o marcador de seleção sem limpar a seleção (por exemplo, durante um movimento).
 func hide_marker() -> void:
 	_marker.visible = false
+
+
+# Se a unidade selecionada morrer, limpa a seleção (o marcador e o alcance somem).
+func _on_unit_died(unit: Unit) -> void:
+	if unit == selected_unit:
+		clear_selection("Seleção limpa (unidade morreu)")
 
 
 ## Dispara um raio físico da câmera pelo ponto da tela e devolve a unidade atingida (ou null).

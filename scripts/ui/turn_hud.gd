@@ -49,7 +49,7 @@ func _refresh() -> void:
 
 	var unit: Unit = _selection.selected_unit
 	if unit != null:
-		text += "\n%s: PA %d/%d" % [unit.unit_name, unit.action_points, unit.max_action_points]
+		text += "\n%s: PA %d/%d · HP %d/%d" % [unit.unit_name, unit.action_points, unit.max_action_points, unit.hp, unit.max_hp]
 
 	if not _target_preview.hover_text.is_empty():
 		text += "\n" + _target_preview.hover_text
