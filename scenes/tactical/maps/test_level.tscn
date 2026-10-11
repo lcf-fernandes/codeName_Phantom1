@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://cj18sgo2n3y1w" path="res://scripts/tactical/combat/combat_calc.gd" id="13_hn5mr"]
 [ext_resource type="Script" uid="uid://b3lueo1geerpx" path="res://scripts/utils/debug_tools.gd" id="14_mud8y"]
 [ext_resource type="Script" uid="uid://ci0vot1vd8ekb" path="res://scripts/tactical/combat/attack_controller.gd" id="15_j0apw"]
+[ext_resource type="Script" uid="uid://dgtf6m6xtvhrw" path="res://scripts/ai/enemy_ai.gd" id="16_vrssf"]
 
 [node name="TestLevel" type="Node3D" unique_id=238378437]
 
@@ -71,3 +72,6 @@ script = ExtResource("14_mud8y")
 
 [node name="AttackController" type="Node" parent="." unique_id=200571942]
 script = ExtResource("15_j0apw")
+
+[node name="EnemyAI" type="Node" parent="." unique_id=368243089]
+script = ExtResource("16_vrssf")

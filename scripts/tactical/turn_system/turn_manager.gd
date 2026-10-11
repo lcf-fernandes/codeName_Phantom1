@@ -15,14 +15,20 @@ const UNITS_GROUP: StringName = &"units"
 
 ## Duração do turno dos inimigos (por enquanto só uma espera), em segundos.
 @export var enemy_turn_duration: float = 0.5
+## Caminho até o EnemyAI (quem joga o turno dos inimigos).
+@export var enemy_ai_path: NodePath = ^"../EnemyAI"
 
 ## Número do turno atual (começa em 1; o turno dos inimigos tem o mesmo número do turno do jogador).
 var turn_number: int = 1
 ## Lado que está jogando agora.
 var side: TurnSide = TurnSide.PLAYER
 
+var _enemy_ai: EnemyAI
+
 
 func _ready() -> void:
+	_enemy_ai = get_node(enemy_ai_path) as EnemyAI
+	assert(_enemy_ai != null, "TurnManager: enemy_ai_path não aponta para um EnemyAI.")
 	# Adiado para que os nós que ouvem os sinais já estejam conectados.
 	_announce_player_turn.call_deferred()
 
@@ -50,7 +56,7 @@ func end_player_turn() -> void:
 	side = TurnSide.ENEMY
 	turn_started.emit(turn_number, TurnSide.ENEMY)
 	print("Turno dos inimigos (sem ação por enquanto)")
-	await get_tree().create_timer(enemy_turn_duration).timeout
+	await _enemy_ai.run_enemy_turn()
 	turn_ended.emit(turn_number, TurnSide.ENEMY)
 
 	turn_number += 1
