@@ -108,10 +108,11 @@ func _show_feedback(world_position: Vector3, text: String, color: Color) -> void
 	label.outline_modulate = Color.BLACK
 	label.modulate = color
 	label.no_depth_test = true
+	label.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(label)
 	label.global_position = world_position + Vector3(0.0, feedback_height, 0.0)
 
-	var tween: Tween = create_tween()
+	var tween: Tween = label.create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(label, "global_position:y", label.global_position.y + feedback_rise, feedback_duration)
 	tween.tween_property(label, "modulate:a", 0.0, feedback_duration)
