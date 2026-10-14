@@ -66,8 +66,14 @@ func _process(_delta: float) -> void:
 		_last_enemy = null
 		return
 
-	var cover: CoverMap.CoverType = _cover_map.get_cover_against(enemy.cell, soldier.cell)
 	var distance: int = _combat_calc.get_distance(soldier.cell, enemy.cell)
+	if distance > soldier.attack_range:
+		# Fora de alcance: sem cobertura nem chance (e sem a linha "Mira").
+		hover_text = "%s · distância %d · fora de alcance (máx. %d)" % [enemy.unit_name, distance, soldier.attack_range]
+		_last_enemy = null
+		return
+
+	var cover: CoverMap.CoverType = _cover_map.get_cover_against(enemy.cell, soldier.cell)
 	var hit_chance: int = _combat_calc.get_hit_chance(soldier.cell, enemy.cell)
 	hover_text = "%s · cobertura contra %s: %s · distância %d · chance de acerto %d%%" % [
 		enemy.unit_name, soldier.unit_name, _cover_label(cover), distance, hit_chance

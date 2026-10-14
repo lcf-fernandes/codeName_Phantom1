@@ -27,6 +27,8 @@ signal died(unit: Unit)
 @export var max_action_points: int = 2
 ## Máximo de pontos de vida (HP).
 @export var max_hp: int = 4
+## Alcance de ataque, em passos de grade (distância em células, nas 4 direções).
+@export var attack_range: int = 5
 
 ## Célula atual da unidade na grade.
 var cell: Vector2i = Vector2i.ZERO

@@ -11,8 +11,6 @@ const UNITS_GROUP: StringName = &"units"
 @export var combat_calc_path: NodePath = ^"../CombatCalc"
 ## Espera entre um inimigo e o próximo, em segundos.
 @export var delay_between_enemies: float = 0.3
-## Distância máxima (em passos de grade) para o inimigo atacar o alvo.
-@export var attack_range: int = 5
 ## Caminho até o AttackController (resolve o ataque).
 @export var attack_controller_path: NodePath = ^"../AttackController"
 
@@ -66,11 +64,11 @@ func run_enemy_turn() -> void:
 
 
 # Depois do movimento (ou de ficar parado): ataca o alvo se ainda houver PA, o alvo estiver vivo
-# e a distância for <= attack_range. No máximo um ataque por inimigo por turno.
+# e a distância for <= attack_range do próprio inimigo. No máximo um ataque por inimigo por turno.
 func _try_attack(enemy: Unit, target: Unit) -> void:
 	var distance: int = _combat_calc.get_distance(enemy.cell, target.cell)
 	var can_attack: bool = enemy.action_points >= _attack_controller.attack_cost \
-			and is_instance_valid(target) and target.hp > 0 and distance <= attack_range
+			and is_instance_valid(target) and target.hp > 0 and distance <= enemy.attack_range
 	if can_attack:
 		_attack_controller.perform_attack(enemy, target)
 	else:

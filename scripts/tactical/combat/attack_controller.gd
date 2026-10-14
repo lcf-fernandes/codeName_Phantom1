@@ -57,6 +57,11 @@ func _on_enemy_clicked(enemy: Unit) -> void:
 		print("%s sem PA" % soldier.unit_name)
 		return
 
+	var distance: int = _combat_calc.get_distance(soldier.cell, enemy.cell)
+	if distance > soldier.attack_range:
+		print("Ataque ignorado: fora de alcance (distância %d, alcance %d)" % [distance, soldier.attack_range])
+		return
+
 	perform_attack(soldier, enemy)
 
 	# Como depois de um movimento: o marcador continua e o alcance é recalculado
