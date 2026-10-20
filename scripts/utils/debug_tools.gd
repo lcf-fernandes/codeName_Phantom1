@@ -1,8 +1,8 @@
 class_name DebugTools
 extends Node
 ## Atalhos de teste de vida, dano e morte:
-## F9 = 1 de dano na unidade selecionada; Shift+F9 = 10 de dano nela;
-## F10 = 1 de dano no primeiro inimigo vivo; Shift+F10 = 10 de dano nele.
+## K = 1 de dano na unidade selecionada; Shift+K = 10 de dano nela;
+## L = 1 de dano no primeiro inimigo vivo; Shift+L = 10 de dano nele.
 
 const UNITS_GROUP: StringName = &"units"
 
@@ -27,10 +27,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	match key_event.keycode:
-		KEY_F9:
+		KEY_K:
 			var amount: int = 10 if key_event.shift_pressed else 1
 			_damage(_selection.selected_unit, amount)
-		KEY_F10:
+		KEY_L:
 			var enemy_amount: int = 10 if key_event.shift_pressed else 1
 			_damage(_first_living_enemy(), enemy_amount)
 
