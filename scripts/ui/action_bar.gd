@@ -140,7 +140,8 @@ func _refresh() -> void:
 		return
 
 	_name_label.text = soldier.unit_name
-	_attack_button.disabled = not _can_attack(soldier)
+	# Com o modo de mira ligado o botão continua habilitado, para poder cancelar.
+	_attack_button.disabled = not (_attack.attack_mode or _can_attack(soldier))
 
 
 # Há PA suficiente para atacar e pelo menos um inimigo vivo ao alcance do soldado.
@@ -157,7 +158,7 @@ func _can_attack(soldier: Unit) -> bool:
 
 
 func _on_attack_pressed() -> void:
-	print("Atacar pressionado")
+	_attack.toggle_attack_mode()
 
 
 func _is_any_unit_moving() -> bool:
