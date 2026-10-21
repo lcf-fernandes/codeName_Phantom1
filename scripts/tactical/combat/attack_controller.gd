@@ -235,7 +235,13 @@ func perform_attack(attacker: Unit, defender: Unit) -> void:
 	var roll: int = forced_roll if forced_roll != 0 else randi_range(1, 100)
 	var hit: bool = roll <= chance
 
-	# Guarda o que a morte pode apagar (a unidade é liberada no fim do quadro).
+	# Animações (só visuais): o atacante avança; se acertou, o defensor reage quando o golpe chega.
+	attacker.play_attack_animation(defender)
+	if hit:
+		defender.play_hit_animation(attacker.lunge_out_time)
+
+	# Guarda o que a morte pode apagar: a unidade só é liberada ao fim da animação de morte (alguns
+	# décimos de segundo depois), mas já sai do grupo "units" e perde o colisor de clique na hora.
 	var defender_name: String = defender.unit_name
 	var defender_cell: Vector2i = defender.cell
 	var defender_position: Vector3 = defender.global_position

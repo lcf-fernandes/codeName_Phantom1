@@ -29,6 +29,22 @@ signal died(unit: Unit)
 @export var max_hp: int = 4
 ## Alcance de ataque, em passos de grade (distância em células, nas 4 direções).
 @export var attack_range: int = 5
+## Retrato exibido na faixa de retratos (opcional; sem imagem, a faixa mostra o número da unidade).
+@export var portrait: Texture2D = null
+## Distância que o corpo avança ao atacar, em metros.
+@export var lunge_distance: float = 0.5
+## Tempo do avanço do ataque, em segundos.
+@export var lunge_out_time: float = 0.12
+## Tempo da volta do ataque, em segundos.
+@export var lunge_back_time: float = 0.18
+## Deslocamento máximo do tremor ao ser atingida, em metros.
+@export var shake_amount: float = 0.12
+## Duração do tremor e do clarão vermelho ao ser atingida, em segundos.
+@export var hit_time: float = 0.25
+## Cor do clarão ao ser atingida (overlay vermelho semitransparente).
+@export var flash_color: Color = Color(1.0, 0.3, 0.3, 0.6)
+## Tempo em que o corpo encolhe até sumir na morte, em segundos.
+@export var death_time: float = 0.3
 
 ## Célula atual da unidade na grade.
 var cell: Vector2i = Vector2i.ZERO
@@ -40,6 +56,11 @@ var action_points: int = max_action_points
 var hp: int = max_hp
 
 var _hp_label: Label3D
+
+# Posição de repouso do Body (cena da unidade) e estado das animações só visuais.
+const BODY_REST_POSITION: Vector3 = Vector3(0.0, 0.6, 0.0)
+var _anim_tween: Tween
+var _hit_ready_msec: int = 0
 
 var _grid_manager: GridManager
 
@@ -102,7 +123,8 @@ func reset_actions() -> void:
 
 ## Causa dano. Ignora valores <= 0 e dano em unidade já morta; o HP nunca fica abaixo de 0.
 ## Ao chegar a 0: sai do grupo "units" (deixa de bloquear células) antes de qualquer outra
-## coisa, emite health_changed e died (uma única vez) e então libera a unidade com queue_free().
+## coisa, emite health_changed e died (uma única vez) e então toca a animação de morte, que termina
+## com queue_free().
 func take_damage(amount: int) -> void:
 	if amount <= 0 or hp <= 0:
 		return
@@ -116,7 +138,115 @@ func take_damage(amount: int) -> void:
 
 	if hp == 0:
 		died.emit(self)
-		queue_free()
+		_play_death_animation()
+
+
+## Animação de ataque (só visual): o Body avança em direção ao alvo (direção horizontal, pelas
+## posições globais) por lunge_distance e volta. Mexe só no Body, nunca na raiz da unidade.
+func play_attack_animation(target: Unit) -> void:
+	_stop_body_animation()
+	var direction: Vector3 = target.global_position - global_position
+	direction.y = 0.0
+	if direction.length() < 0.001:
+		return
+	# O Body é filho da raiz: converte a direção do mundo para o espaço local da unidade.
+	var local_direction: Vector3 = global_transform.basis.inverse() * direction.normalized()
+
+	_anim_tween = _new_body_tween()
+	_anim_tween.tween_property(_body, "position", BODY_REST_POSITION + local_direction * lunge_distance, lunge_out_time) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_anim_tween.tween_property(_body, "position", BODY_REST_POSITION, lunge_back_time) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_anim_tween.tween_callback(_reset_body)
+
+
+## Animação de dano (só visual): após `delay`, o Body treme e pisca com um overlay vermelho
+## semitransparente por hit_time; no fim volta à posição original e o overlay sai.
+func play_hit_animation(delay: float = 0.0) -> void:
+	_stop_body_animation()
+	_hit_ready_msec = Time.get_ticks_msec() + int(delay * 1000.0)
+
+	_anim_tween = _new_body_tween()
+	if delay > 0.0:
+		_anim_tween.tween_interval(delay)
+	_append_hit_effect(_anim_tween)
+	_anim_tween.tween_callback(_reset_body)
+
+
+# Morte: esconde o rótulo de vida, segue animando mesmo com o jogo pausado, toca a animação de
+# dano (respeitando o que faltava do atraso de um golpe já agendado), encolhe o Body até 0 em
+# death_time e só então chama queue_free().
+func _play_death_animation() -> void:
+	# Desliga o colisor de clique: a unidade morrendo não pode mais ser clicada nem atingida pelo raio.
+	var hitbox: CollisionObject3D = get_node_or_null("Hitbox") as CollisionObject3D
+	if hitbox != null:
+		hitbox.set_deferred("collision_layer", 0)
+
+	_hp_label.visible = false
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+	var remaining_delay: float = 0.0
+	if _anim_tween != null and _anim_tween.is_valid():
+		remaining_delay = maxf(0.0, float(_hit_ready_msec - Time.get_ticks_msec()) / 1000.0)
+
+	_stop_body_animation()
+	_anim_tween = _new_body_tween()
+	if remaining_delay > 0.0:
+		_anim_tween.tween_interval(remaining_delay)
+	_append_hit_effect(_anim_tween)
+	_anim_tween.tween_property(_body, "scale", Vector3.ZERO, death_time)
+	_anim_tween.tween_callback(queue_free)
+
+
+# Tween das animações do Body: continua rodando mesmo com o jogo pausado (fim da missão).
+func _new_body_tween() -> Tween:
+	var tween: Tween = create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	return tween
+
+
+# Clarão vermelho + tremor do Body por hit_time; termina com o Body em repouso e sem overlay.
+func _append_hit_effect(tween: Tween) -> void:
+	tween.tween_callback(_show_flash)
+	var steps: int = 5
+	var step_time: float = hit_time / float(steps)
+	for i: int in steps:
+		var shake: Vector3 = Vector3(
+			randf_range(-shake_amount, shake_amount),
+			randf_range(-shake_amount, shake_amount),
+			randf_range(-shake_amount, shake_amount)
+		)
+		tween.tween_property(_body, "position", BODY_REST_POSITION + shake, step_time)
+	tween.tween_callback(_end_hit_effect)
+
+
+func _show_flash() -> void:
+	var flash: StandardMaterial3D = StandardMaterial3D.new()
+	flash.albedo_color = flash_color
+	flash.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flash.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_body.material_overlay = flash
+
+
+func _end_hit_effect() -> void:
+	_body.position = BODY_REST_POSITION
+	_body.material_overlay = null
+
+
+# Para a animação do Body em andamento (se houver) e o devolve ao estado original.
+func _stop_body_animation() -> void:
+	if _anim_tween != null and _anim_tween.is_valid():
+		_anim_tween.kill()
+	_anim_tween = null
+	_hit_ready_msec = 0
+	_reset_body()
+
+
+# Body exatamente em position (0, 0.6, 0), scale 1 e sem overlay.
+func _reset_body() -> void:
+	_body.position = BODY_REST_POSITION
+	_body.scale = Vector3.ONE
+	_body.material_overlay = null
 
 
 # Label3D com o HP acima da unidade (2,2 m acima do chão), sempre virado para a câmera e com borda.

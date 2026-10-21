@@ -18,6 +18,8 @@
 [ext_resource type="Script" uid="uid://dgtf6m6xtvhrw" path="res://scripts/ai/enemy_ai.gd" id="16_vrssf"]
 [ext_resource type="Script" uid="uid://c3emyrn56kbfs" path="res://scripts/tactical/mission_controller.gd" id="17_u1b1f"]
 [ext_resource type="Script" uid="uid://xvmcfewft3c" path="res://scripts/ui/action_bar.gd" id="18_4bb7x"]
+[ext_resource type="Script" uid="uid://gojm43f5vi5g" path="res://scripts/ui/cell_readout.gd" id="19_e2sfh"]
+[ext_resource type="Script" uid="uid://dvg18eda70kt8" path="res://scripts/ui/portrait_bar.gd" id="20_80g43"]
 
 [node name="TestLevel" type="Node3D" unique_id=238378437]
 
@@ -26,9 +28,9 @@ script = ExtResource("1_wljeq")
 
 [node name="Camera" type="Camera3D" parent="." unique_id=1481658930]
 transform = Transform3D(1, 0, 0, 0, 0.57357645, 0.81915206, 0, -0.81915206, 0.57357645, 0, 31.13, 21.8)
-v_offset = -1.92
+v_offset = -1.09
 current = true
-fov = 40.0
+fov = 43.8
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1636436937]
 transform = Transform3D(0.81915206, -0.46984634, 0.32898995, 0, 0.57357645, 0.81915206, -0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
@@ -85,3 +87,9 @@ script = ExtResource("17_u1b1f")
 
 [node name="ActionBar" type="CanvasLayer" parent="." unique_id=659244606]
 script = ExtResource("18_4bb7x")
+
+[node name="CellReadout" type="Node" parent="." unique_id=1448349042]
+script = ExtResource("19_e2sfh")
+
+[node name="PortraitBar" type="CanvasLayer" parent="." unique_id=2130713716]
+script = ExtResource("20_80g43")

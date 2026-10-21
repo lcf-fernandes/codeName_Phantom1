@@ -12,7 +12,9 @@ extends CanvasLayer
 ## Caminho até o MovementRange (legenda das cores dos quadrados de alcance).
 @export var movement_range_path: NodePath = ^"../MovementRange"
 ## Tamanho da fonte do texto.
-@export var font_size: int = 22
+@export var font_size: int = 18
+## Largura do texto, em pixels; o que passar disso quebra para a linha de baixo.
+@export var text_width: int = 340
 
 var _turn_manager: TurnManager
 var _selection: SelectionController
@@ -38,6 +40,17 @@ func _ready() -> void:
 	_label.add_theme_color_override("font_color", Color.WHITE)
 	_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_label.add_theme_constant_override("outline_size", 6)
+
+	# Largura limitada, com quebra automática de linha, e fundo escuro semitransparente.
+	_label.custom_minimum_size = Vector2(float(text_width), 0.0)
+	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var background: StyleBoxFlat = StyleBoxFlat.new()
+	background.bg_color = Color(0.05, 0.06, 0.09, 0.65)
+	background.content_margin_left = 10.0
+	background.content_margin_right = 10.0
+	background.content_margin_top = 6.0
+	background.content_margin_bottom = 6.0
+	_label.add_theme_stylebox_override("normal", background)
 	add_child(_label)
 	_refresh()
 

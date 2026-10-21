@@ -12,19 +12,24 @@ const UNITS_GROUP: StringName = &"units"
 @export var movement_range_path: NodePath = ^"../MovementRange"
 ## Caminho até o TurnManager (de quem é a vez).
 @export var turn_manager_path: NodePath = ^"../TurnManager"
+## Caminho até o AttackController (com o modo de mira ligado, cliques no chão não movem).
+@export var attack_controller_path: NodePath = ^"../AttackController"
 
 var _selection: SelectionController
 var _movement_range: MovementRange
 var _turn_manager: TurnManager
+var _attack: AttackController
 
 
 func _ready() -> void:
 	_selection = get_node(selection_controller_path) as SelectionController
 	_movement_range = get_node(movement_range_path) as MovementRange
 	_turn_manager = get_node(turn_manager_path) as TurnManager
+	_attack = get_node(attack_controller_path) as AttackController
 	assert(_selection != null, "UnitMover: selection_controller_path não aponta para um SelectionController.")
 	assert(_movement_range != null, "UnitMover: movement_range_path não aponta para um MovementRange.")
 	assert(_turn_manager != null, "UnitMover: turn_manager_path não aponta para um TurnManager.")
+	assert(_attack != null, "UnitMover: attack_controller_path não aponta para um AttackController.")
 	_selection.cell_clicked.connect(_on_cell_clicked)
 	_turn_manager.turn_started.connect(_on_turn_started)
 
@@ -45,6 +50,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
+	# Modo de mira: o clique no chão não move o soldado nem limpa a seleção.
+	if _attack.attack_mode:
+		print("Clique ignorado: modo de mira")
+		return
+
 	var unit: Unit = _selection.selected_unit
 	if unit == null:
 		_selection.clear_selection()

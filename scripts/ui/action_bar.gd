@@ -18,6 +18,8 @@ const UNITS_GROUP: StringName = &"units"
 @export var bottom_margin: int = 16
 ## Tamanho da fonte do nome do soldado.
 @export var name_font_size: int = 30
+## Tamanho da fonte do aviso do modo de mira.
+@export var warning_font_size: int = 24
 
 var _selection: SelectionController
 var _turn_manager: TurnManager
@@ -27,6 +29,7 @@ var _combat_calc: CombatCalc
 var _bar: PanelContainer
 var _name_label: Label
 var _attack_button: Button
+var _warning: Label
 
 
 func _ready() -> void:
@@ -44,6 +47,7 @@ func _ready() -> void:
 	assert(_combat_calc != null, "ActionBar: combat_calc_path não aponta para um CombatCalc.")
 
 	_build_ui()
+	_attack.attack_mode_changed.connect(_on_attack_mode_changed)
 	_refresh()
 
 
@@ -104,6 +108,8 @@ func _build_ui() -> void:
 
 	_attack_button = _make_button("Atacar [1]", buttons)
 	_attack_button.name = "AttackButton"
+	# Modo alternado: só assim o botão pode aparecer pressionado enquanto o modo de mira está ligado.
+	_attack_button.toggle_mode = true
 	_attack_button.pressed.connect(_on_attack_pressed)
 
 	var defend_button: Button = _make_button("Defender [2]", buttons)
@@ -116,6 +122,24 @@ func _build_ui() -> void:
 	overwatch_button.disabled = true
 	overwatch_button.tooltip_text = "Em breve"
 
+	# Aviso do modo de mira, centralizado logo acima da barra (a posição é ajustada no _refresh).
+	_warning = Label.new()
+	_warning.name = "AimWarning"
+	_warning.text = "Selecione um alvo · Esc cancela"
+	_warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_warning.anchor_left = 0.5
+	_warning.anchor_right = 0.5
+	_warning.anchor_top = 1.0
+	_warning.anchor_bottom = 1.0
+	_warning.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_warning.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_warning.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_warning.add_theme_font_size_override("font_size", warning_font_size)
+	_warning.add_theme_color_override("font_color", Color.WHITE)
+	_warning.add_theme_color_override("font_outline_color", Color.BLACK)
+	_warning.add_theme_constant_override("outline_size", 8)
+	_warning.visible = false
+	add_child(_warning)
 
 # Sem foco: Enter e Espaço não podem "apertar" um botão (o Enter encerra o turno).
 func _make_button(label_text: String, parent: Control) -> Button:
@@ -136,9 +160,12 @@ func _refresh() -> void:
 			and _turn_manager.side == TurnManager.TurnSide.PLAYER \
 			and not _is_any_unit_moving() and not get_tree().paused
 	_bar.visible = show_bar
+	# O aviso só aparece com o modo de mira ligado e a barra visível.
+	_warning.visible = show_bar and _attack.attack_mode
 	if not show_bar:
 		return
 
+	_warning.offset_bottom = -(bottom_margin + _bar.size.y + 8.0)
 	_name_label.text = soldier.unit_name
 	# Com o modo de mira ligado o botão continua habilitado, para poder cancelar.
 	_attack_button.disabled = not (_attack.attack_mode or _can_attack(soldier))
@@ -159,6 +186,13 @@ func _can_attack(soldier: Unit) -> bool:
 
 func _on_attack_pressed() -> void:
 	_attack.toggle_attack_mode()
+	# O clique inverte o botão sozinho; se o modo não mudou (não pôde entrar), desfaz a inversão.
+	_attack_button.set_pressed_no_signal(_attack.attack_mode)
+
+
+# Mantém o botão Atacar pressionado enquanto o modo de mira está ligado, sem disparar o clique.
+func _on_attack_mode_changed(active: bool) -> void:
+	_attack_button.set_pressed_no_signal(active)
 
 
 func _is_any_unit_moving() -> bool:
