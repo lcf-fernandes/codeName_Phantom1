@@ -2,7 +2,7 @@ class_name ActionBar
 extends CanvasLayer
 ## Barra de ações no rodapé, montada em código: nome do soldado selecionado e os botões
 ## Atacar [1], Defender [2] e Vigilância [3]. "Atacar" liga o modo de mira, "Defender" gasta os PA
-## restantes e deixa o soldado em guarda; "Vigilância" ainda não existe.
+## restantes e deixa o soldado em guarda; "Vigilância" gasta os PA e deixa o soldado em vigilância.
 
 const UNITS_GROUP: StringName = &"units"
 
@@ -30,6 +30,7 @@ var _bar: PanelContainer
 var _name_label: Label
 var _attack_button: Button
 var _defend_button: Button
+var _overwatch_button: Button
 var _warning: Label
 
 
@@ -56,7 +57,8 @@ func _process(_delta: float) -> void:
 	_refresh()
 
 
-# As teclas 1 e 2 fazem o mesmo que os botões Atacar e Defender, se a barra estiver visível e o botão habilitado.
+# As teclas 1, 2 e 3 fazem o mesmo que os botões Atacar, Defender e Vigilância, se a barra estiver
+# visível e o botão habilitado.
 func _unhandled_input(event: InputEvent) -> void:
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event == null or not key_event.pressed or key_event.echo:
@@ -71,6 +73,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _defend_button.disabled:
 			return
 		_on_defend_pressed()
+	elif key_event.keycode == KEY_3 or key_event.keycode == KEY_KP_3:
+		if _overwatch_button.disabled:
+			return
+		_on_overwatch_pressed()
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -124,10 +130,9 @@ func _build_ui() -> void:
 	_defend_button.name = "DefendButton"
 	_defend_button.pressed.connect(_on_defend_pressed)
 
-	var overwatch_button: Button = _make_button("Vigilância [3]", buttons)
-	overwatch_button.name = "OverwatchButton"
-	overwatch_button.disabled = true
-	overwatch_button.tooltip_text = "Em breve"
+	_overwatch_button = _make_button("Vigilância [3]", buttons)
+	_overwatch_button.name = "OverwatchButton"
+	_overwatch_button.pressed.connect(_on_overwatch_pressed)
 
 	# Aviso do modo de mira, centralizado logo acima da barra (a posição é ajustada no _refresh).
 	_warning = Label.new()
@@ -177,6 +182,7 @@ func _refresh() -> void:
 	# Com o modo de mira ligado o botão continua habilitado, para poder cancelar.
 	_attack_button.disabled = not (_attack.attack_mode or _can_attack(soldier))
 	_defend_button.disabled = not _can_defend(soldier)
+	_overwatch_button.disabled = not _can_overwatch(soldier)
 
 
 # Há PA suficiente para atacar e pelo menos um inimigo vivo ao alcance do soldado.
@@ -198,10 +204,15 @@ func _on_attack_pressed() -> void:
 	_attack_button.set_pressed_no_signal(_attack.attack_mode)
 
 
-# Pode defender: PA >= 1 e ainda não está defendendo (a barra já só aparece no turno do jogador,
-# sem unidade em movimento).
+# Pode defender: PA >= 1 e não está defendendo nem em vigilância (a barra já só aparece no turno do
+# jogador, sem unidade em movimento).
 func _can_defend(soldier: Unit) -> bool:
-	return soldier.action_points >= 1 and not soldier.is_defending
+	return soldier.action_points >= 1 and not soldier.is_defending and not soldier.is_overwatching
+
+
+# Pode entrar em vigilância: PA >= 1 e não está defendendo nem já em vigilância.
+func _can_overwatch(soldier: Unit) -> bool:
+	return soldier.action_points >= 1 and not soldier.is_defending and not soldier.is_overwatching
 
 
 # Defender: cancela o modo de mira (sem redesenhar as células), o soldado guarda a posição e a
@@ -213,6 +224,18 @@ func _on_defend_pressed() -> void:
 	if _attack.attack_mode:
 		_attack.cancel_attack_mode(false)
 	if soldier.defend():
+		_selection.select_unit(soldier)
+
+
+# Vigilância, no mesmo molde do Defender: cancela o modo de mira (sem redesenhar as células), o
+# soldado entra em vigilância e a seleção é refeita para atualizar HUD, células e barra.
+func _on_overwatch_pressed() -> void:
+	var soldier: Unit = _selection.selected_unit
+	if soldier == null or not is_instance_valid(soldier) or not _can_overwatch(soldier):
+		return
+	if _attack.attack_mode:
+		_attack.cancel_attack_mode(false)
+	if soldier.go_overwatch():
 		_selection.select_unit(soldier)
 
 

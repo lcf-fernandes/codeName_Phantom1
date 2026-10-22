@@ -47,6 +47,8 @@ signal died(unit: Unit)
 @export var death_time: float = 0.3
 ## Cor do anel que marca a unidade em Defender (ciano semitransparente).
 @export var defend_marker_color: Color = Color(0.2, 0.9, 1.0, 0.85)
+## Cor do anel que marca a unidade em Vigilância (laranja semitransparente).
+@export var overwatch_marker_color: Color = Color(1.0, 0.6, 0.1, 0.85)
 
 ## Célula atual da unidade na grade.
 var cell: Vector2i = Vector2i.ZERO
@@ -69,6 +71,12 @@ var is_defending: bool = false
 
 # Anel de Defender, criado em código na primeira vez que é preciso.
 var _defend_marker: MeshInstance3D = null
+
+## Verdadeiro enquanto a unidade está em Vigilância; volta a falso em reset_actions().
+var is_overwatching: bool = false
+
+# Anel de Vigilância, criado em código na primeira vez que é preciso.
+var _overwatch_marker: MeshInstance3D = null
 
 var _grid_manager: GridManager
 
@@ -124,11 +132,13 @@ func spend_action(cost: int = 1) -> void:
 	action_points = maxi(action_points - cost, 0)
 
 
-## Devolve todos os pontos de ação (início do turno) e encerra o Defender.
+## Devolve todos os pontos de ação (início do turno) e encerra o Defender e a Vigilância.
 func reset_actions() -> void:
 	action_points = max_action_points
 	is_defending = false
 	_update_defend_marker()
+	is_overwatching = false
+	_update_overwatch_marker()
 
 
 ## Ação Defender: gasta TODOS os PA restantes e deixa a unidade em guarda até o próximo reset_actions().
@@ -170,6 +180,36 @@ func _build_defend_marker() -> MeshInstance3D:
 	marker.material_override = material
 	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(marker)
+	return marker
+
+
+## Ação Vigilância: gasta TODOS os PA restantes e deixa a unidade em vigilância até o próximo
+## reset_actions(). Sem PA, em Defender ou já em vigilância, não faz nada e devolve false.
+func go_overwatch() -> bool:
+	if action_points < 1 or is_defending or is_overwatching:
+		return false
+	is_overwatching = true
+	_update_overwatch_marker()
+	spend_action(action_points)
+	print("Vigilância: %s em vigilância" % unit_name)
+	return true
+
+
+# Mostra o anel laranja enquanto is_overwatching for verdadeiro e o esconde caso contrário.
+func _update_overwatch_marker() -> void:
+	if _overwatch_marker == null:
+		if not is_overwatching:
+			return
+		_overwatch_marker = _build_overwatch_marker()
+	_overwatch_marker.visible = is_overwatching
+
+
+# Mesmo anel do Defender (mesma geometria e posição), na cor de Vigilância.
+func _build_overwatch_marker() -> MeshInstance3D:
+	var marker: MeshInstance3D = _build_defend_marker()
+	marker.name = "OverwatchMarker"
+	var material: StandardMaterial3D = marker.material_override as StandardMaterial3D
+	material.albedo_color = overwatch_marker_color
 	return marker
 
 
@@ -232,6 +272,8 @@ func _play_death_animation() -> void:
 	# O anel de Defender some junto com o início da morte.
 	if _defend_marker != null:
 		_defend_marker.visible = false
+	if _overwatch_marker != null:
+		_overwatch_marker.visible = false
 	# Desliga o colisor de clique: a unidade morrendo não pode mais ser clicada nem atingida pelo raio.
 	var hitbox: CollisionObject3D = get_node_or_null("Hitbox") as CollisionObject3D
 	if hitbox != null:
