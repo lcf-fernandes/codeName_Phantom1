@@ -1,7 +1,8 @@
 class_name TargetPreview
 extends Node3D
-## Com um soldado selecionado, mostra (via hover_text) a cobertura do inimigo sob o mouse
-## contra esse soldado. Só lê o estado dos outros nós; não altera nada neles.
+## Com o mouse sobre um inimigo e um soldado selecionado, mostra (via hover_text) a cobertura do
+## inimigo contra esse soldado; com o mouse sobre um soldado vivo, lista as ameaças a ele.
+## Só lê o estado dos outros nós; não altera nada neles.
 
 const UNITS_GROUP: StringName = &"units"
 
@@ -55,11 +56,19 @@ func _input(event: InputEvent) -> void:
 
 func _process(_delta: float) -> void:
 	var soldier: Unit = _selection.selected_unit
+	var hovered: Unit = null
+	if _turn_manager.side == TurnManager.TurnSide.PLAYER and not _is_any_unit_moving():
+		hovered = _pick_unit(_mouse_pos)
+
+	# Mouse sobre um soldado vivo (selecionado ou não): lista as ameaças a ele.
+	if hovered != null and hovered.team == Unit.Team.SQUAD and hovered.hp > 0:
+		hover_text = _threat_text(hovered)
+		_last_enemy = null
+		return
+
 	var enemy: Unit = null
-	if soldier != null and _turn_manager.side == TurnManager.TurnSide.PLAYER and not _is_any_unit_moving():
-		var hovered: Unit = _pick_unit(_mouse_pos)
-		if hovered != null and hovered.team == Unit.Team.ENEMY:
-			enemy = hovered
+	if soldier != null and hovered != null and hovered.team == Unit.Team.ENEMY:
+		enemy = hovered
 
 	if enemy == null:
 		hover_text = ""
@@ -83,6 +92,34 @@ func _process(_delta: float) -> void:
 	if enemy != _last_enemy:
 		_last_enemy = enemy
 		print("Mira: %s vs %s -> %s" % [enemy.unit_name, soldier.unit_name, String(CoverMap.CoverType.keys()[cover])])
+
+
+## Texto das ameaças a um soldado: cada inimigo vivo (em ordem de nome) que o alcança, com a distância,
+## a cobertura do soldado contra ele e a chance de acerto do inimigo (considerando o Defender).
+func _threat_text(soldier: Unit) -> String:
+	var threats: Array[Unit] = []
+	for node: Node in get_tree().get_nodes_in_group(UNITS_GROUP):
+		var enemy: Unit = node as Unit
+		if enemy == null or enemy.team != Unit.Team.ENEMY or enemy.hp <= 0:
+			continue
+		if _combat_calc.get_distance(enemy.cell, soldier.cell) <= enemy.attack_range:
+			threats.append(enemy)
+
+	if threats.is_empty():
+		return "%s · nenhum inimigo ao alcance" % soldier.unit_name
+
+	threats.sort_custom(func(a: Unit, b: Unit) -> bool: return a.unit_name < b.unit_name)
+
+	var header: String = "%s · ameaças" % soldier.unit_name
+	if soldier.is_defending:
+		header += " · em guarda"
+	var lines: PackedStringArray = PackedStringArray([header])
+	for enemy: Unit in threats:
+		var distance: int = _combat_calc.get_distance(enemy.cell, soldier.cell)
+		var cover: CoverMap.CoverType = _cover_map.get_cover_against(soldier.cell, enemy.cell)
+		var chance: int = _combat_calc.get_hit_chance(enemy.cell, soldier.cell, soldier.is_defending)
+		lines.append("%s · distância %d · cobertura %s · %d%%" % [enemy.unit_name, distance, _cover_label(cover), chance])
+	return "\n".join(lines)
 
 
 ## Unidade sob o ponto da tela, pelo raio físico (só na camada das unidades); null se não houver.
