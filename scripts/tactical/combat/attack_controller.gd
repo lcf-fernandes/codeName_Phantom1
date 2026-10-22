@@ -36,6 +36,14 @@ signal attack_mode_changed(active: bool)
 @export var target_marker_size: float = 1.8
 ## Altura dos marcadores de alvo acima do chão, em metros.
 @export var target_marker_height: float = 0.025
+## Distância (em células) a partir da qual o ataque mostra um projétil; mais perto, sem projétil.
+@export var min_projectile_distance: int = 2
+## Raio do projétil, em metros.
+@export var projectile_radius: float = 0.12
+## Velocidade do projétil, em metros por segundo (o voo dura entre 0,15 s e 0,5 s).
+@export var projectile_speed: float = 30.0
+## Cor do projétil (amarelo, com brilho).
+@export var projectile_color: Color = Color(1.0, 0.9, 0.2)
 
 ## Verdadeiro enquanto o jogador escolhe o alvo do ataque.
 var attack_mode: bool = false
@@ -235,10 +243,14 @@ func perform_attack(attacker: Unit, defender: Unit) -> void:
 	var roll: int = forced_roll if forced_roll != 0 else randi_range(1, 100)
 	var hit: bool = roll <= chance
 
-	# Animações (só visuais): o atacante avança; se acertou, o defensor reage quando o golpe chega.
+	# Animações (só visuais): o atacante avança; se acertou, o defensor reage quando o golpe chega
+	# (com projétil, quando ele chega).
 	attacker.play_attack_animation(defender)
+	var hit_delay: float = attacker.lunge_out_time
+	if _combat_calc.get_distance(attacker.cell, defender.cell) >= min_projectile_distance:
+		hit_delay += _spawn_projectile(attacker, defender, hit)
 	if hit:
-		defender.play_hit_animation(attacker.lunge_out_time)
+		defender.play_hit_animation(hit_delay)
 
 	# Guarda o que a morte pode apagar: a unidade só é liberada ao fim da animação de morte (alguns
 	# décimos de segundo depois), mas já sai do grupo "units" e perde o colisor de clique na hora.
@@ -264,6 +276,78 @@ func perform_attack(attacker: Unit, defender: Unit) -> void:
 		_show_feedback(defender_position, "-%d" % damage_dealt, Color(1.0, 0.35, 0.25))
 	else:
 		_show_feedback(defender_position, "ERROU", Color(0.9, 0.9, 0.9))
+
+
+const PROJECTILE_MIN_TIME: float = 0.15
+const PROJECTILE_MAX_TIME: float = 0.5
+const MISS_SIDE_OFFSET: float = 0.7
+const MISS_OVERSHOOT: float = 1.5
+
+
+# Projétil visual (só efeito): esfera amarela com brilho, na raiz da cena, que sai do Body do atacante
+# depois do avanço e voa em linha reta até o Body do defensor (acerto) ou passa ao lado dele (erro:
+# 0,7 m para o lado e 1,5 m além). Devolve o tempo de voo, para o defensor piscar quando ele chega.
+func _spawn_projectile(attacker: Unit, defender: Unit, hit: bool) -> float:
+	var start_estimate: Vector3 = _body_position(attacker)
+	var target_position: Vector3 = _body_position(defender)
+
+	var end_position: Vector3 = target_position
+	if not hit:
+		var shot: Vector3 = target_position - start_estimate
+		shot.y = 0.0
+		if shot.length() > 0.001:
+			var forward: Vector3 = shot.normalized()
+			var side: Vector3 = Vector3(-forward.z, 0.0, forward.x)
+			if randf() < 0.5:
+				side = -side
+			end_position = target_position + side * MISS_SIDE_OFFSET + forward * MISS_OVERSHOOT
+
+	# Velocidade constante, com o voo total entre 0,15 s e 0,5 s.
+	var flight_time: float = clampf(
+		start_estimate.distance_to(end_position) / maxf(projectile_speed, 0.001),
+		PROJECTILE_MIN_TIME, PROJECTILE_MAX_TIME
+	)
+
+	var projectile: MeshInstance3D = MeshInstance3D.new()
+	projectile.name = "Projectile"
+	var mesh: SphereMesh = SphereMesh.new()
+	mesh.radius = projectile_radius
+	mesh.height = projectile_radius * 2.0
+	projectile.mesh = mesh
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = projectile_color
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.emission_enabled = true
+	material.emission = projectile_color
+	material.emission_energy_multiplier = 2.0
+	projectile.material_override = material
+	projectile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	projectile.process_mode = Node.PROCESS_MODE_ALWAYS
+	projectile.visible = false
+	get_tree().current_scene.add_child(projectile)
+	projectile.global_position = start_estimate
+
+	var tween: Tween = projectile.create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_interval(attacker.lunge_out_time)
+	tween.tween_callback(_launch_projectile.bind(projectile, attacker, start_estimate))
+	tween.tween_property(projectile, "global_position", end_position, flight_time)
+	tween.tween_callback(projectile.queue_free)
+	return flight_time
+
+
+# Começo do voo: o projétil aparece no Body do atacante (que acabou de avançar).
+func _launch_projectile(projectile: MeshInstance3D, attacker: Unit, fallback: Vector3) -> void:
+	projectile.global_position = _body_position(attacker) if is_instance_valid(attacker) else fallback
+	projectile.visible = true
+
+
+# Posição global do Body da unidade (ou 0,6 m acima da raiz, se não houver Body).
+func _body_position(unit: Unit) -> Vector3:
+	var body: Node3D = unit.get_node_or_null("Body") as Node3D
+	if body != null:
+		return body.global_position
+	return unit.global_position + Vector3(0.0, 0.6, 0.0)
 
 
 # Texto flutuante sobre o inimigo: sobe um pouco e some. Criado e removido por este nó.
