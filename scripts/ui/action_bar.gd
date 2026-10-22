@@ -1,8 +1,8 @@
 class_name ActionBar
 extends CanvasLayer
 ## Barra de ações no rodapé, montada em código: nome do soldado selecionado e os botões
-## Atacar [1], Defender [2] e Vigilância [3]. Por enquanto "Atacar" só imprime uma mensagem;
-## "Defender" e "Vigilância" ainda não existem.
+## Atacar [1], Defender [2] e Vigilância [3]. "Atacar" liga o modo de mira, "Defender" gasta os PA
+## restantes e deixa o soldado em guarda; "Vigilância" ainda não existe.
 
 const UNITS_GROUP: StringName = &"units"
 
@@ -29,6 +29,7 @@ var _combat_calc: CombatCalc
 var _bar: PanelContainer
 var _name_label: Label
 var _attack_button: Button
+var _defend_button: Button
 var _warning: Label
 
 
@@ -55,16 +56,23 @@ func _process(_delta: float) -> void:
 	_refresh()
 
 
-# A tecla 1 faz o mesmo que o botão Atacar, se a barra estiver visível e o botão habilitado.
+# As teclas 1 e 2 fazem o mesmo que os botões Atacar e Defender, se a barra estiver visível e o botão habilitado.
 func _unhandled_input(event: InputEvent) -> void:
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event == null or not key_event.pressed or key_event.echo:
 		return
-	if key_event.keycode != KEY_1 and key_event.keycode != KEY_KP_1:
+	if not _bar.visible:
 		return
-	if not _bar.visible or _attack_button.disabled:
+	if key_event.keycode == KEY_1 or key_event.keycode == KEY_KP_1:
+		if _attack_button.disabled:
+			return
+		_on_attack_pressed()
+	elif key_event.keycode == KEY_2 or key_event.keycode == KEY_KP_2:
+		if _defend_button.disabled:
+			return
+		_on_defend_pressed()
+	else:
 		return
-	_on_attack_pressed()
 	get_viewport().set_input_as_handled()
 
 
@@ -112,10 +120,9 @@ func _build_ui() -> void:
 	_attack_button.toggle_mode = true
 	_attack_button.pressed.connect(_on_attack_pressed)
 
-	var defend_button: Button = _make_button("Defender [2]", buttons)
-	defend_button.name = "DefendButton"
-	defend_button.disabled = true
-	defend_button.tooltip_text = "Em breve"
+	_defend_button = _make_button("Defender [2]", buttons)
+	_defend_button.name = "DefendButton"
+	_defend_button.pressed.connect(_on_defend_pressed)
 
 	var overwatch_button: Button = _make_button("Vigilância [3]", buttons)
 	overwatch_button.name = "OverwatchButton"
@@ -169,6 +176,7 @@ func _refresh() -> void:
 	_name_label.text = soldier.unit_name
 	# Com o modo de mira ligado o botão continua habilitado, para poder cancelar.
 	_attack_button.disabled = not (_attack.attack_mode or _can_attack(soldier))
+	_defend_button.disabled = not _can_defend(soldier)
 
 
 # Há PA suficiente para atacar e pelo menos um inimigo vivo ao alcance do soldado.
@@ -188,6 +196,24 @@ func _on_attack_pressed() -> void:
 	_attack.toggle_attack_mode()
 	# O clique inverte o botão sozinho; se o modo não mudou (não pôde entrar), desfaz a inversão.
 	_attack_button.set_pressed_no_signal(_attack.attack_mode)
+
+
+# Pode defender: PA >= 1 e ainda não está defendendo (a barra já só aparece no turno do jogador,
+# sem unidade em movimento).
+func _can_defend(soldier: Unit) -> bool:
+	return soldier.action_points >= 1 and not soldier.is_defending
+
+
+# Defender: cancela o modo de mira (sem redesenhar as células), o soldado guarda a posição e a
+# seleção é refeita para atualizar HUD, células e barra, como depois de um ataque.
+func _on_defend_pressed() -> void:
+	var soldier: Unit = _selection.selected_unit
+	if soldier == null or not is_instance_valid(soldier) or not _can_defend(soldier):
+		return
+	if _attack.attack_mode:
+		_attack.cancel_attack_mode(false)
+	if soldier.defend():
+		_selection.select_unit(soldier)
 
 
 # Mantém o botão Atacar pressionado enquanto o modo de mira está ligado, sem disparar o clique.

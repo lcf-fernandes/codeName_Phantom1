@@ -15,6 +15,8 @@ extends Node
 @export var low_cover_penalty: int = 20
 ## Penalidade, em pontos percentuais, contra cobertura alta.
 @export var high_cover_penalty: int = 40
+## Penalidade, em pontos percentuais, quando o defensor está em Defender (guardando a posição).
+@export var defend_penalty: int = 20
 ## Distância (em células) até a qual não há penalidade.
 @export var distance_free_cells: int = 6
 ## Penalidade, em pontos percentuais, por célula além de distance_free_cells.
@@ -41,8 +43,9 @@ func get_distance(from_cell: Vector2i, to_cell: Vector2i) -> int:
 	return absi(to_cell.x - from_cell.x) + absi(to_cell.y - from_cell.y)
 
 
-## Chance de acerto (em %) para uma distância e uma cobertura dadas.
-func compute_hit_chance(distance: int, cover: CoverMap.CoverType) -> int:
+## Chance de acerto (em %) para uma distância e uma cobertura dadas. Com `defending`, o defensor
+## está em Defender e a chance perde defend_penalty antes de ser limitada.
+func compute_hit_chance(distance: int, cover: CoverMap.CoverType, defending: bool = false) -> int:
 	var cover_penalty: int = 0
 	match cover:
 		CoverMap.CoverType.LOW:
@@ -51,14 +54,17 @@ func compute_hit_chance(distance: int, cover: CoverMap.CoverType) -> int:
 			cover_penalty = high_cover_penalty
 
 	var distance_penalty: int = maxi(0, distance - distance_free_cells) * distance_penalty_per_cell
-	return clampi(base_hit_chance - cover_penalty - distance_penalty, min_hit_chance, max_hit_chance)
+	var chance: int = base_hit_chance - cover_penalty - distance_penalty
+	if defending:
+		chance -= defend_penalty
+	return clampi(chance, min_hit_chance, max_hit_chance)
 
 
 ## Chance de acerto (em %) do atacante contra o defensor, pela distância e pela cobertura do defensor.
-func get_hit_chance(attacker: Vector2i, defender: Vector2i) -> int:
+func get_hit_chance(attacker: Vector2i, defender: Vector2i, defending: bool = false) -> int:
 	var distance: int = get_distance(attacker, defender)
 	var cover: CoverMap.CoverType = _cover_map.get_cover_against(defender, attacker)
-	return compute_hit_chance(distance, cover)
+	return compute_hit_chance(distance, cover, defending)
 
 
 # Roda os 8 casos de compute_hit_chance e imprime cada resultado e o total.

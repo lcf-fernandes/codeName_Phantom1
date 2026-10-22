@@ -62,6 +62,9 @@ const BODY_REST_POSITION: Vector3 = Vector3(0.0, 0.6, 0.0)
 var _anim_tween: Tween
 var _hit_ready_msec: int = 0
 
+## Verdadeiro enquanto a unidade guarda a posição (Defender); volta a falso em reset_actions().
+var is_defending: bool = false
+
 var _grid_manager: GridManager
 
 @onready var _body: MeshInstance3D = $Body
@@ -116,9 +119,21 @@ func spend_action(cost: int = 1) -> void:
 	action_points = maxi(action_points - cost, 0)
 
 
-## Devolve todos os pontos de ação (início do turno).
+## Devolve todos os pontos de ação (início do turno) e encerra o Defender.
 func reset_actions() -> void:
 	action_points = max_action_points
+	is_defending = false
+
+
+## Ação Defender: gasta TODOS os PA restantes e deixa a unidade em guarda até o próximo reset_actions().
+## Sem PA ou já defendendo, não faz nada e devolve false.
+func defend() -> bool:
+	if action_points < 1 or is_defending:
+		return false
+	is_defending = true
+	spend_action(action_points)
+	print("Defender: %s guarda a posição" % unit_name)
+	return true
 
 
 ## Causa dano. Ignora valores <= 0 e dano em unidade já morta; o HP nunca fica abaixo de 0.

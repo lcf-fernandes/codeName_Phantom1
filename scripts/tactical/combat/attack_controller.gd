@@ -240,7 +240,7 @@ func _on_enemy_clicked(enemy: Unit) -> void:
 ## atacante, aplica o dano, imprime o resultado, mostra o texto flutuante e imprime a morte,
 ## se o defensor morrer. Não faz nenhuma checagem de turno nem de alcance: quem chama decide.
 func perform_attack(attacker: Unit, defender: Unit) -> void:
-	var chance: int = _combat_calc.get_hit_chance(attacker.cell, defender.cell)
+	var chance: int = _combat_calc.get_hit_chance(attacker.cell, defender.cell, defender.is_defending)
 	var roll: int = forced_roll if forced_roll != 0 else randi_range(1, 100)
 	var hit: bool = roll <= chance
 
