@@ -66,7 +66,7 @@ func run_enemy_turn() -> void:
 				enemy.cell.x, enemy.cell.y, path.size(), cover_label
 			])
 
-		_try_attack(enemy, target)
+		await _try_attack(enemy, target)
 
 		if i < enemies.size() - 1:
 			await get_tree().create_timer(delay_between_enemies).timeout
@@ -79,7 +79,7 @@ func _try_attack(enemy: Unit, target: Unit) -> void:
 	var can_attack: bool = enemy.action_points >= _attack_controller.attack_cost \
 			and is_instance_valid(target) and target.hp > 0 and distance <= enemy.attack_range
 	if can_attack:
-		_attack_controller.perform_attack(enemy, target)
+		await _attack_controller.perform_attack(enemy, target)
 	else:
 		print("IA: %s fora de alcance (distância %d)" % [enemy.unit_name, distance])
 

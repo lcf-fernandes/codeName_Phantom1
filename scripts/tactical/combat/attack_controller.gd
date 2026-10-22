@@ -228,11 +228,12 @@ func _on_enemy_clicked(enemy: Unit) -> void:
 
 	# O modo termina ANTES do ataque; as células são redesenhadas pela reseleção logo abaixo.
 	cancel_attack_mode(false)
-	perform_attack(soldier, enemy)
+	await perform_attack(soldier, enemy)
 
 	# Como depois de um movimento: o marcador continua e o alcance é recalculado
 	# (com 0 PA os quadrados azuis somem); o HUD acompanha os PA sozinho.
-	_selection.select_unit(soldier)
+	if is_instance_valid(soldier):
+		_selection.select_unit(soldier)
 
 
 ## Resolve um ataque: calcula a chance, faz a rolagem (respeitando forced_roll), gasta os PA do
@@ -249,33 +250,53 @@ func perform_attack(attacker: Unit, defender: Unit) -> void:
 	var hit_delay: float = attacker.lunge_out_time
 	if _combat_calc.get_distance(attacker.cell, defender.cell) >= min_projectile_distance:
 		hit_delay += _spawn_projectile(attacker, defender, hit)
-	if hit:
-		defender.play_hit_animation(hit_delay)
+
+	# O atacante fica "ocupado" (is_moving) até o impacto; quem bloqueia cliques e turnos lê isso.
+	attacker.spend_action(attack_cost)
+	# Nomes guardados antes da espera: as unidades podem deixar de existir até o impacto.
+	var attacker_name: String = attacker.unit_name
+	var defender_name: String = defender.unit_name
+	attacker.is_moving = true
+
+	# Espera o impacto: o avanço do atacante e, havendo projétil, o voo dele.
+	await get_tree().create_timer(hit_delay).timeout
+
+	# No impacto o alvo pode já não existir (ou ter morrido) nesse meio tempo.
+	if not is_instance_valid(defender) or defender.hp <= 0:
+		print("Ataque cancelado: alvo indisponível")
+		if is_instance_valid(attacker):
+			attacker.is_moving = false
+		return
 
 	# Guarda o que a morte pode apagar: a unidade só é liberada ao fim da animação de morte (alguns
 	# décimos de segundo depois), mas já sai do grupo "units" e perde o colisor de clique na hora.
-	var defender_name: String = defender.unit_name
 	var defender_cell: Vector2i = defender.cell
 	var defender_position: Vector3 = defender.global_position
 	var hp_before: int = defender.hp
 
-	attacker.spend_action(attack_cost)
 	if hit:
+		# A reação vem antes do dano: se o golpe matar, a animação de morte já a incorpora (chamar
+		# play_hit_animation depois do take_damage interromperia a morte e a unidade não seria liberada).
+		defender.play_hit_animation(0.0)
 		defender.take_damage(attack_damage)
 	var damage_dealt: int = hp_before - defender.hp
 
+	if hit:
+		_show_feedback(defender_position, "-%d" % damage_dealt, Color(1.0, 0.35, 0.25))
+	else:
+		_show_feedback(defender_position, "ERROU", Color(0.9, 0.9, 0.9))
+
 	print("Ataque: %s -> %s | chance %d%% | rolagem %d -> %s | dano %d | hp %d/%d" % [
-		attacker.unit_name, defender_name, chance, roll, "ACERTOU" if hit else "ERROU",
+		attacker_name, defender_name, chance, roll, "ACERTOU" if hit else "ERROU",
 		damage_dealt, defender.hp, defender.max_hp
 	])
 	# A unidade em si não imprime nada ao morrer (isso é feito pelo DebugTools nos atalhos de teste).
 	if defender.hp <= 0:
 		print("%s morreu em (%d, %d)" % [defender_name, defender_cell.x, defender_cell.y])
 
-	if hit:
-		_show_feedback(defender_position, "-%d" % damage_dealt, Color(1.0, 0.35, 0.25))
-	else:
-		_show_feedback(defender_position, "ERROU", Color(0.9, 0.9, 0.9))
+	# Fim do ataque: o atacante deixa de ficar "ocupado".
+	if is_instance_valid(attacker):
+		attacker.is_moving = false
 
 
 const PROJECTILE_MIN_TIME: float = 0.15
