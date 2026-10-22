@@ -45,6 +45,8 @@ signal died(unit: Unit)
 @export var flash_color: Color = Color(1.0, 0.3, 0.3, 0.6)
 ## Tempo em que o corpo encolhe até sumir na morte, em segundos.
 @export var death_time: float = 0.3
+## Cor do anel que marca a unidade em Defender (ciano semitransparente).
+@export var defend_marker_color: Color = Color(0.2, 0.9, 1.0, 0.85)
 
 ## Célula atual da unidade na grade.
 var cell: Vector2i = Vector2i.ZERO
@@ -64,6 +66,9 @@ var _hit_ready_msec: int = 0
 
 ## Verdadeiro enquanto a unidade guarda a posição (Defender); volta a falso em reset_actions().
 var is_defending: bool = false
+
+# Anel de Defender, criado em código na primeira vez que é preciso.
+var _defend_marker: MeshInstance3D = null
 
 var _grid_manager: GridManager
 
@@ -123,6 +128,7 @@ func spend_action(cost: int = 1) -> void:
 func reset_actions() -> void:
 	action_points = max_action_points
 	is_defending = false
+	_update_defend_marker()
 
 
 ## Ação Defender: gasta TODOS os PA restantes e deixa a unidade em guarda até o próximo reset_actions().
@@ -131,9 +137,40 @@ func defend() -> bool:
 	if action_points < 1 or is_defending:
 		return false
 	is_defending = true
+	_update_defend_marker()
 	spend_action(action_points)
 	print("Defender: %s guarda a posição" % unit_name)
 	return true
+
+
+# Mostra o anel enquanto is_defending for verdadeiro e o esconde caso contrário.
+func _update_defend_marker() -> void:
+	if _defend_marker == null:
+		if not is_defending:
+			return
+		_defend_marker = _build_defend_marker()
+	_defend_marker.visible = is_defending
+
+
+# Anel ciano deitado no chão, filho da raiz da unidade (não do Body), sem sombra e sem colisor.
+func _build_defend_marker() -> MeshInstance3D:
+	var marker: MeshInstance3D = MeshInstance3D.new()
+	marker.name = "DefendMarker"
+	var torus: TorusMesh = TorusMesh.new()
+	torus.inner_radius = 0.75
+	torus.outer_radius = 0.95
+	marker.mesh = torus
+	marker.scale = Vector3(1.0, 0.15, 1.0)
+	marker.position = Vector3(0.0, 0.05, 0.0)
+
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = defend_marker_color
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	marker.material_override = material
+	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(marker)
+	return marker
 
 
 ## Causa dano. Ignora valores <= 0 e dano em unidade já morta; o HP nunca fica abaixo de 0.
@@ -192,6 +229,9 @@ func play_hit_animation(delay: float = 0.0) -> void:
 # dano (respeitando o que faltava do atraso de um golpe já agendado), encolhe o Body até 0 em
 # death_time e só então chama queue_free().
 func _play_death_animation() -> void:
+	# O anel de Defender some junto com o início da morte.
+	if _defend_marker != null:
+		_defend_marker.visible = false
 	# Desliga o colisor de clique: a unidade morrendo não pode mais ser clicada nem atingida pelo raio.
 	var hitbox: CollisionObject3D = get_node_or_null("Hitbox") as CollisionObject3D
 	if hitbox != null:
