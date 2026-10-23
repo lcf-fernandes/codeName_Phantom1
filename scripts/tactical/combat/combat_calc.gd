@@ -44,8 +44,9 @@ func get_distance(from_cell: Vector2i, to_cell: Vector2i) -> int:
 
 
 ## Chance de acerto (em %) para uma distância e uma cobertura dadas. Com `defending`, o defensor
-## está em Defender e a chance perde defend_penalty antes de ser limitada.
-func compute_hit_chance(distance: int, cover: CoverMap.CoverType, defending: bool = false) -> int:
+## está em Defender e a chance perde defend_penalty; `extra_penalty` é uma penalidade a mais, em
+## pontos percentuais. Os dois são subtraídos antes de a chance ser limitada.
+func compute_hit_chance(distance: int, cover: CoverMap.CoverType, defending: bool = false, extra_penalty: int = 0) -> int:
 	var cover_penalty: int = 0
 	match cover:
 		CoverMap.CoverType.LOW:
@@ -54,17 +55,17 @@ func compute_hit_chance(distance: int, cover: CoverMap.CoverType, defending: boo
 			cover_penalty = high_cover_penalty
 
 	var distance_penalty: int = maxi(0, distance - distance_free_cells) * distance_penalty_per_cell
-	var chance: int = base_hit_chance - cover_penalty - distance_penalty
+	var chance: int = base_hit_chance - cover_penalty - distance_penalty - extra_penalty
 	if defending:
 		chance -= defend_penalty
 	return clampi(chance, min_hit_chance, max_hit_chance)
 
 
 ## Chance de acerto (em %) do atacante contra o defensor, pela distância e pela cobertura do defensor.
-func get_hit_chance(attacker: Vector2i, defender: Vector2i, defending: bool = false) -> int:
+func get_hit_chance(attacker: Vector2i, defender: Vector2i, defending: bool = false, extra_penalty: int = 0) -> int:
 	var distance: int = get_distance(attacker, defender)
 	var cover: CoverMap.CoverType = _cover_map.get_cover_against(defender, attacker)
-	return compute_hit_chance(distance, cover, defending)
+	return compute_hit_chance(distance, cover, defending, extra_penalty)
 
 
 # Roda os 8 casos de compute_hit_chance e imprime cada resultado e o total.

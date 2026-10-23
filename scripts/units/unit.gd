@@ -12,6 +12,10 @@ signal move_finished(unit: Unit)
 signal health_changed(unit: Unit, hp: int, max_hp: int)
 ## Emitido uma única vez, quando os pontos de vida chegam a 0.
 signal died(unit: Unit)
+## Emitido toda vez que a unidade termina de andar até uma célula do caminho (inclusive a última).
+signal cell_reached(unit: Unit, cell: Vector2i)
+## Emitido quando o último pedido de espera do movimento (hold_move) é liberado.
+signal hold_released
 
 ## Nome exibido da unidade.
 @export var unit_name: String = "Unidade"
@@ -49,11 +53,15 @@ signal died(unit: Unit)
 @export var defend_marker_color: Color = Color(0.2, 0.9, 1.0, 0.85)
 ## Cor do anel que marca a unidade em Vigilância (laranja semitransparente).
 @export var overwatch_marker_color: Color = Color(1.0, 0.6, 0.1, 0.85)
+## Temporário: com ele ligado, imprime "Passo: <nome> em (x, y)" a cada célula alcançada no movimento.
+@export var debug_steps: bool = true
 
 ## Célula atual da unidade na grade.
 var cell: Vector2i = Vector2i.ZERO
 ## Verdadeiro enquanto a unidade percorre um caminho.
 var is_moving: bool = false
+## Quantos ouvintes pediram para o movimento esperar na célula atual (hold_move / release_move).
+var move_holds: int = 0
 ## Pontos de ação restantes neste turno.
 var action_points: int = max_action_points
 ## Pontos de vida atuais (0 = morta).
@@ -103,7 +111,9 @@ func place_on_cell(grid_manager: GridManager, new_cell: Vector2i) -> void:
 
 ## Anima a unidade célula por célula pelo caminho (da primeira célula depois da origem até o destino),
 ## em linha reta entre os centros das células e com velocidade constante (move_speed).
-## A célula lógica só é atualizada no fim, por place_on_cell, e então move_finished é emitido.
+## Ao chegar em cada célula emite cell_reached; se algum ouvinte pediu espera (hold_move) durante o
+## sinal, aguarda hold_released antes de seguir. A célula lógica só é atualizada no fim, por
+## place_on_cell, e então move_finished é emitido.
 ## Exige que place_on_cell já tenha sido chamado ao menos uma vez (guarda o GridManager).
 func move_along_path(path: Array[Vector2i]) -> void:
 	if path.is_empty() or is_moving:
@@ -111,14 +121,46 @@ func move_along_path(path: Array[Vector2i]) -> void:
 	assert(_grid_manager != null, "Unit: chame place_on_cell antes de move_along_path.")
 
 	is_moving = true
-	var tween: Tween = create_tween()
-	var previous: Vector3 = global_position
 	for step: Vector2i in path:
 		var target: Vector3 = _grid_manager.cell_to_world(step)
-		var duration: float = previous.distance_to(target) / maxf(move_speed, 0.001)
+		var duration: float = global_position.distance_to(target) / maxf(move_speed, 0.001)
+		var tween: Tween = create_tween()
 		tween.tween_property(self, "global_position", target, duration)
-		previous = target
-	tween.tween_callback(_finish_move.bind(path[path.size() - 1]))
+		await tween.finished
+
+		if debug_steps:
+			print("Passo: %s em (%d, %d)" % [unit_name, step.x, step.y])
+		cell_reached.emit(self, step)
+
+		# Um ouvinte pede a espera chamando hold_move() de forma síncrona dentro do cell_reached.
+		var waited: bool = false
+		while move_holds > 0:
+			waited = true
+			await hold_released
+
+		# Depois de uma espera, a unidade pode ter morrido ou sido liberada: encerra sem travar quem
+		# espera move_finished.
+		if waited and (not is_instance_valid(self) or is_queued_for_deletion() or hp <= 0):
+			is_moving = false
+			move_finished.emit(self)
+			return
+
+	_finish_move(path[path.size() - 1])
+
+
+## Pede que o movimento espere na célula atual (some 1 ao contador de esperas).
+## Deve ser chamado de forma síncrona dentro do tratamento de cell_reached.
+func hold_move() -> void:
+	move_holds += 1
+
+
+## Libera um pedido de espera (subtrai 1, nunca abaixo de 0). Ao chegar a 0, emite hold_released.
+func release_move() -> void:
+	if move_holds <= 0:
+		return
+	move_holds -= 1
+	if move_holds == 0:
+		hold_released.emit()
 
 
 func _finish_move(final_cell: Vector2i) -> void:
@@ -193,6 +235,12 @@ func go_overwatch() -> bool:
 	spend_action(action_points)
 	print("Vigilância: %s em vigilância" % unit_name)
 	return true
+
+
+## Gasta a vigilância (ela reagiu): desliga is_overwatching e esconde o anel laranja.
+func consume_overwatch() -> void:
+	is_overwatching = false
+	_update_overwatch_marker()
 
 
 # Mostra o anel laranja enquanto is_overwatching for verdadeiro e o esconde caso contrário.

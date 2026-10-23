@@ -61,6 +61,11 @@ func run_enemy_turn() -> void:
 			enemy.spend_action(1)
 			enemy.move_along_path(path)
 			await enemy.move_finished
+			# O inimigo pode ter sumido ou morrido durante o movimento: pula o resto do turno dele.
+			if not is_instance_valid(enemy) or enemy.hp <= 0:
+				if i < enemies.size() - 1:
+					await get_tree().create_timer(delay_between_enemies).timeout
+				continue
 			print("IA: %s -> alvo %s | (%d, %d) -> (%d, %d) | %d passos | cobertura %s" % [
 				enemy.unit_name, target.unit_name, from_cell.x, from_cell.y,
 				enemy.cell.x, enemy.cell.y, path.size(), cover_label

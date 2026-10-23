@@ -239,8 +239,13 @@ func _on_enemy_clicked(enemy: Unit) -> void:
 ## Resolve um ataque: calcula a chance, faz a rolagem (respeitando forced_roll), gasta os PA do
 ## atacante, aplica o dano, imprime o resultado, mostra o texto flutuante e imprime a morte,
 ## se o defensor morrer. Não faz nenhuma checagem de turno nem de alcance: quem chama decide.
-func perform_attack(attacker: Unit, defender: Unit) -> void:
-	var chance: int = _combat_calc.get_hit_chance(attacker.cell, defender.cell, defender.is_defending)
+## `extra_penalty` é subtraída da chance (e aparece na linha impressa quando > 0). Com `defender_cell`
+## diferente de (-1, -1), essa célula substitui defender.cell na chance, na cobertura, na distância
+## e na linha de morte; a célula do atacante continua sendo attacker.cell.
+func perform_attack(attacker: Unit, defender: Unit, extra_penalty: int = 0, defender_cell: Vector2i = Vector2i(-1, -1)) -> void:
+	var has_given_cell: bool = defender_cell != Vector2i(-1, -1)
+	var target_cell: Vector2i = defender_cell if has_given_cell else defender.cell
+	var chance: int = _combat_calc.get_hit_chance(attacker.cell, target_cell, defender.is_defending, extra_penalty)
 	var roll: int = forced_roll if forced_roll != 0 else randi_range(1, 100)
 	var hit: bool = roll <= chance
 
@@ -248,7 +253,7 @@ func perform_attack(attacker: Unit, defender: Unit) -> void:
 	# (com projétil, quando ele chega).
 	attacker.play_attack_animation(defender)
 	var hit_delay: float = attacker.lunge_out_time
-	if _combat_calc.get_distance(attacker.cell, defender.cell) >= min_projectile_distance:
+	if _combat_calc.get_distance(attacker.cell, target_cell) >= min_projectile_distance:
 		hit_delay += _spawn_projectile(attacker, defender, hit)
 
 	# O atacante fica "ocupado" (is_moving) até o impacto; quem bloqueia cliques e turnos lê isso.
@@ -270,7 +275,7 @@ func perform_attack(attacker: Unit, defender: Unit) -> void:
 
 	# Guarda o que a morte pode apagar: a unidade só é liberada ao fim da animação de morte (alguns
 	# décimos de segundo depois), mas já sai do grupo "units" e perde o colisor de clique na hora.
-	var defender_cell: Vector2i = defender.cell
+	var death_cell: Vector2i = defender_cell if has_given_cell else defender.cell
 	var defender_position: Vector3 = defender.global_position
 	var hp_before: int = defender.hp
 
@@ -286,13 +291,16 @@ func perform_attack(attacker: Unit, defender: Unit) -> void:
 	else:
 		_show_feedback(defender_position, "ERROU", Color(0.9, 0.9, 0.9))
 
-	print("Ataque: %s -> %s | chance %d%% | rolagem %d -> %s | dano %d | hp %d/%d" % [
+	var attack_line: String = "Ataque: %s -> %s | chance %d%% | rolagem %d -> %s | dano %d | hp %d/%d" % [
 		attacker_name, defender_name, chance, roll, "ACERTOU" if hit else "ERROU",
 		damage_dealt, defender.hp, defender.max_hp
-	])
+	]
+	if extra_penalty > 0:
+		attack_line += " | penalidade %d" % extra_penalty
+	print(attack_line)
 	# A unidade em si não imprime nada ao morrer (isso é feito pelo DebugTools nos atalhos de teste).
 	if defender.hp <= 0:
-		print("%s morreu em (%d, %d)" % [defender_name, defender_cell.x, defender_cell.y])
+		print("%s morreu em (%d, %d)" % [defender_name, death_cell.x, death_cell.y])
 
 	# Fim do ataque: o atacante deixa de ficar "ocupado".
 	if is_instance_valid(attacker):
