@@ -33,6 +33,8 @@ signal hold_released
 @export var max_hp: int = 4
 ## Alcance de ataque, em passos de grade (distância em células, nas 4 direções).
 @export var attack_range: int = 5
+## Alcance de visão, em passos de grade (usado pelo VisionSystem).
+@export var sight_range: int = 8
 ## Retrato exibido na faixa de retratos (opcional; sem imagem, a faixa mostra o número da unidade).
 @export var portrait: Texture2D = null
 ## Distância que o corpo avança ao atacar, em metros.
