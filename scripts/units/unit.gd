@@ -54,7 +54,7 @@ signal hold_released
 ## Cor do anel que marca a unidade em Vigilância (laranja semitransparente).
 @export var overwatch_marker_color: Color = Color(1.0, 0.6, 0.1, 0.85)
 ## Temporário: com ele ligado, imprime "Passo: <nome> em (x, y)" a cada célula alcançada no movimento.
-@export var debug_steps: bool = true
+@export var debug_steps: bool = false
 
 ## Célula atual da unidade na grade.
 var cell: Vector2i = Vector2i.ZERO
