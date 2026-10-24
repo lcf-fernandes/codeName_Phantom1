@@ -14,6 +14,8 @@ signal attack_mode_changed(active: bool)
 @export var turn_manager_path: NodePath = ^"../TurnManager"
 ## Caminho até o CombatCalc (chance de acerto).
 @export var combat_calc_path: NodePath = ^"../CombatCalc"
+## Caminho até o VisionSystem (linha de visão do atirador).
+@export var vision_system_path: NodePath = ^"../VisionSystem"
 ## PA gastos por ataque.
 @export var attack_cost: int = 1
 ## Dano de um ataque que acerta.
@@ -51,6 +53,7 @@ var attack_mode: bool = false
 var _selection: SelectionController
 var _turn_manager: TurnManager
 var _combat_calc: CombatCalc
+var _vision: VisionSystem
 var _movement_range: MovementRange
 var _grid_manager: GridManager
 var _marker_mesh: PlaneMesh
@@ -64,11 +67,13 @@ func _ready() -> void:
 	_combat_calc = get_node(combat_calc_path) as CombatCalc
 	_movement_range = get_node(movement_range_path) as MovementRange
 	_grid_manager = get_node(grid_manager_path) as GridManager
+	_vision = get_node(vision_system_path) as VisionSystem
 	assert(_selection != null, "AttackController: selection_controller_path não aponta para um SelectionController.")
 	assert(_turn_manager != null, "AttackController: turn_manager_path não aponta para um TurnManager.")
 	assert(_combat_calc != null, "AttackController: combat_calc_path não aponta para um CombatCalc.")
 	assert(_movement_range != null, "AttackController: movement_range_path não aponta para um MovementRange.")
 	assert(_grid_manager != null, "AttackController: grid_manager_path não aponta para um GridManager.")
+	assert(_vision != null, "AttackController: vision_system_path não aponta para um VisionSystem.")
 
 	_marker_mesh = PlaneMesh.new()
 	_marker_mesh.size = Vector2(target_marker_size, target_marker_size)
@@ -167,14 +172,29 @@ func _on_turn_changed(_turn_number: int, _side: TurnManager.TurnSide) -> void:
 	cancel_attack_mode(false)
 
 
-# Inimigos vivos a distância <= attack_range do soldado.
+## Verdadeiro se `attacker` pode mirar em `defender`: os dois válidos e vivos, de times diferentes,
+## o defensor fora da névoa, ao alcance de ataque e dentro da visão do atirador (distância e linha
+## de visão, pelo sight_range dele).
+func can_target(attacker: Unit, defender: Unit) -> bool:
+	if not is_instance_valid(attacker) or not is_instance_valid(defender):
+		return false
+	if attacker.hp <= 0 or defender.hp <= 0 or attacker.team == defender.team:
+		return false
+	if defender.is_fogged:
+		return false
+	if _combat_calc.get_distance(attacker.cell, defender.cell) > attacker.attack_range:
+		return false
+	return _vision.can_see(attacker.cell, defender.cell, attacker.sight_range)
+
+
+# Inimigos que o soldado pode mirar agora (can_target: alcance, névoa e linha de visão).
 func _enemies_in_range(soldier: Unit) -> Array[Unit]:
 	var result: Array[Unit] = []
 	for node: Node in get_tree().get_nodes_in_group(UNITS_GROUP):
 		var enemy: Unit = node as Unit
 		if enemy == null or enemy.team != Unit.Team.ENEMY or enemy.hp <= 0:
 			continue
-		if _combat_calc.get_distance(soldier.cell, enemy.cell) <= soldier.attack_range:
+		if can_target(soldier, enemy):
 			result.append(enemy)
 	return result
 
@@ -224,6 +244,11 @@ func _on_enemy_clicked(enemy: Unit) -> void:
 	var distance: int = _combat_calc.get_distance(soldier.cell, enemy.cell)
 	if distance > soldier.attack_range:
 		print("Ataque ignorado: fora de alcance (distância %d, alcance %d)" % [distance, soldier.attack_range])
+		return
+
+	# Ao alcance, mas fora da visão do atirador (linha de visão bloqueada ou inimigo na névoa).
+	if not can_target(soldier, enemy):
+		print("Ataque ignorado: sem linha de visão")
 		return
 
 	# O modo termina ANTES do ataque; as células são redesenhadas pela reseleção logo abaixo.

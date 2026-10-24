@@ -193,7 +193,7 @@ func _can_attack(soldier: Unit) -> bool:
 		var unit: Unit = node as Unit
 		if unit == null or unit.team != Unit.Team.ENEMY or unit.hp <= 0:
 			continue
-		if _combat_calc.get_distance(soldier.cell, unit.cell) <= soldier.attack_range:
+		if _attack.can_target(soldier, unit):
 			return true
 	return false
 
