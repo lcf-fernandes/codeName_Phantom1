@@ -16,6 +16,8 @@ extends Node
 @export var turn_manager_path: NodePath = ^"../TurnManager"
 ## Quando verdadeiro, imprime uma linha sempre que a lista de inimigos visíveis muda.
 @export var debug_vision_report: bool = true
+## Quando verdadeiro, os inimigos que o esquadrão não enxerga ficam escondidos (névoa de guerra).
+@export var fog_enabled: bool = true
 
 ## Emitido quando o conjunto de células visíveis muda em relação ao cálculo anterior.
 signal visibility_changed
@@ -131,6 +133,17 @@ func recompute() -> void:
 	if changed:
 		visibility_changed.emit()
 	_report_visible_enemies()
+	# Sempre, mesmo sem mudar o conjunto: um inimigo pode ficar escondido só por se mover.
+	_apply_fog()
+
+
+# Esconde (ou mostra) cada inimigo vivo conforme o esquadrão o enxerga.
+func _apply_fog() -> void:
+	for node: Node in get_tree().get_nodes_in_group(UNITS_GROUP):
+		var enemy: Unit = node as Unit
+		if enemy == null or enemy.team != Unit.Team.ENEMY or enemy.hp <= 0:
+			continue
+		enemy.set_fogged(fog_enabled and not is_unit_visible(enemy))
 
 
 # Conecta os sinais das unidades e do TurnManager e faz o primeiro cálculo.

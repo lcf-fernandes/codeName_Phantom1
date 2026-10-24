@@ -85,6 +85,13 @@ var _defend_marker: MeshInstance3D = null
 ## Verdadeiro enquanto a unidade está em Vigilância; volta a falso em reset_actions().
 var is_overwatching: bool = false
 
+## Verdadeiro enquanto a unidade está escondida pela névoa de guerra (ver set_fogged).
+var is_fogged: bool = false
+
+# Camada de colisão original do Hitbox, guardada na primeira vez que a névoa o desliga.
+var _hitbox_layer: int = 0
+var _hitbox_layer_saved: bool = false
+
 # Anel de Vigilância, criado em código na primeira vez que é preciso.
 var _overwatch_marker: MeshInstance3D = null
 
@@ -243,6 +250,26 @@ func go_overwatch() -> bool:
 func consume_overwatch() -> void:
 	is_overwatching = false
 	_update_overwatch_marker()
+
+
+## Esconde ou mostra a unidade pela névoa de guerra: muda `visible` da raiz e, no Hitbox, zera a
+## camada de colisão ao esconder (guardando a original) e a restaura ao mostrar. Não faz nada se a
+## unidade está morrendo (hp <= 0) ou se o valor não mudou.
+func set_fogged(value: bool) -> void:
+	if hp <= 0:
+		return
+	if value == is_fogged:
+		return
+	is_fogged = value
+	visible = not value
+
+	var hitbox: CollisionObject3D = get_node_or_null("Hitbox") as CollisionObject3D
+	if hitbox == null:
+		return
+	if not _hitbox_layer_saved:
+		_hitbox_layer = hitbox.collision_layer
+		_hitbox_layer_saved = true
+	hitbox.collision_layer = 0 if value else _hitbox_layer
 
 
 # Mostra o anel laranja enquanto is_overwatching for verdadeiro e o esconde caso contrário.
