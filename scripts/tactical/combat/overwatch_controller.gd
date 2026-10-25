@@ -12,16 +12,21 @@ const UNITS_GROUP: StringName = &"units"
 @export var attack_controller_path: NodePath = ^"../AttackController"
 ## Caminho até o CombatCalc (distância entre células).
 @export var combat_calc_path: NodePath = ^"../CombatCalc"
+## Caminho até o VisionSystem (linha de visão do soldado em vigilância).
+@export var vision_system_path: NodePath = ^"../VisionSystem"
 
 var _attack_controller: AttackController
 var _combat_calc: CombatCalc
+var _vision: VisionSystem
 
 
 func _ready() -> void:
 	_attack_controller = get_node(attack_controller_path) as AttackController
 	_combat_calc = get_node(combat_calc_path) as CombatCalc
+	_vision = get_node(vision_system_path) as VisionSystem
 	assert(_attack_controller != null, "OverwatchController: attack_controller_path não aponta para um AttackController.")
 	assert(_combat_calc != null, "OverwatchController: combat_calc_path não aponta para um CombatCalc.")
+	assert(_vision != null, "OverwatchController: vision_system_path não aponta para um VisionSystem.")
 	# Depois de os inimigos existirem (os spawners criam as unidades no _ready deles).
 	_connect_enemies.call_deferred()
 
@@ -45,7 +50,9 @@ func _on_cell_reached(enemy: Unit, cell: Vector2i) -> void:
 			continue
 		if soldier.hp <= 0 or not soldier.is_overwatching:
 			continue
-		if _combat_calc.get_distance(soldier.cell, cell) <= soldier.attack_range:
+		# Ao alcance e com linha de visão até a célula do sinal.
+		if _combat_calc.get_distance(soldier.cell, cell) <= soldier.attack_range \
+				and _vision.can_see(soldier.cell, cell, soldier.sight_range):
 			watchers.append(soldier)
 	if watchers.is_empty():
 		return

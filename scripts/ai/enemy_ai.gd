@@ -16,11 +16,14 @@ const UNITS_GROUP: StringName = &"units"
 @export var attack_controller_path: NodePath = ^"../AttackController"
 ## Caminho até o CoverMap (cobertura das células candidatas contra o alvo).
 @export var cover_map_path: NodePath = ^"../CoverMap"
+## Caminho até o VisionSystem (linha de visão para atirar).
+@export var vision_system_path: NodePath = ^"../VisionSystem"
 
 var _movement_range: MovementRange
 var _combat_calc: CombatCalc
 var _attack_controller: AttackController
 var _cover_map: CoverMap
+var _vision: VisionSystem
 
 
 func _ready() -> void:
@@ -28,10 +31,12 @@ func _ready() -> void:
 	_combat_calc = get_node(combat_calc_path) as CombatCalc
 	_attack_controller = get_node(attack_controller_path) as AttackController
 	_cover_map = get_node(cover_map_path) as CoverMap
+	_vision = get_node(vision_system_path) as VisionSystem
 	assert(_movement_range != null, "EnemyAI: movement_range_path não aponta para um MovementRange.")
 	assert(_combat_calc != null, "EnemyAI: combat_calc_path não aponta para um CombatCalc.")
 	assert(_attack_controller != null, "EnemyAI: attack_controller_path não aponta para um AttackController.")
 	assert(_cover_map != null, "EnemyAI: cover_map_path não aponta para um CoverMap.")
+	assert(_vision != null, "EnemyAI: vision_system_path não aponta para um VisionSystem.")
 
 
 ## Roda o turno dos inimigos: renova os PA de todos e move um inimigo por vez, em ordem de nome.
@@ -77,16 +82,25 @@ func run_enemy_turn() -> void:
 			await get_tree().create_timer(delay_between_enemies).timeout
 
 
-# Depois do movimento (ou de ficar parado): ataca o alvo se ainda houver PA, o alvo estiver vivo
-# e a distância for <= attack_range do próprio inimigo. No máximo um ataque por inimigo por turno.
+# Depois do movimento (ou de ficar parado): ataca o alvo se ainda houver PA, o alvo estiver vivo,
+# a distância for <= attack_range do próprio inimigo e houver linha de visão. No máximo um ataque
+# por inimigo por turno.
 func _try_attack(enemy: Unit, target: Unit) -> void:
 	var distance: int = _combat_calc.get_distance(enemy.cell, target.cell)
 	var can_attack: bool = enemy.action_points >= _attack_controller.attack_cost \
-			and is_instance_valid(target) and target.hp > 0 and distance <= enemy.attack_range
+			and is_instance_valid(target) and target.hp > 0 and _can_attack_from(enemy, enemy.cell, target)
 	if can_attack:
 		await _attack_controller.perform_attack(enemy, target)
 	else:
-		print("IA: %s fora de alcance (distância %d)" % [enemy.unit_name, distance])
+		print("IA: %s sem alcance ou sem linha de visão (distância %d)" % [enemy.unit_name, distance])
+
+
+# O inimigo, estando em from_cell, atira no alvo: distância <= attack_range dele e linha de visão
+# (VisionSystem.can_see, pelo sight_range dele).
+func _can_attack_from(enemy: Unit, from_cell: Vector2i, target: Unit) -> bool:
+	if _combat_calc.get_distance(from_cell, target.cell) > enemy.attack_range:
+		return false
+	return _vision.can_see(from_cell, target.cell, enemy.sight_range)
 
 
 # Unidades vivas do lado informado (as mortas saem do grupo "units").
@@ -125,7 +139,7 @@ func _choose_destination(enemy: Unit, target: Unit) -> Vector2i:
 	var options: Array[Dictionary] = []
 	for cell: Vector2i in costs.keys():
 		var distance: int = _combat_calc.get_distance(cell, target.cell)
-		if distance > enemy.attack_range:
+		if not _can_attack_from(enemy, cell, target):
 			continue
 		options.append({
 			"cell": cell,

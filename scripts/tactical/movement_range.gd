@@ -173,14 +173,14 @@ func _on_selection_cleared() -> void:
 	_show_tiles([])
 
 
-## Inimigo vivo mais próximo da célula do soldado (distância em passos); empate: menor nome.
-## Devolve null se não houver inimigos vivos.
+## Inimigo vivo e visível (sem névoa) mais próximo da célula do soldado (distância em passos); empate:
+## menor nome. Inimigos escondidos pela névoa de guerra são ignorados. Devolve null se não houver.
 func _find_reference_enemy(soldier: Unit) -> Unit:
 	var best: Unit = null
 	var best_distance: int = 0
 	for node: Node in get_tree().get_nodes_in_group(UNITS_GROUP):
 		var enemy: Unit = node as Unit
-		if enemy == null or enemy.team != Unit.Team.ENEMY or enemy.hp <= 0:
+		if enemy == null or enemy.team != Unit.Team.ENEMY or enemy.hp <= 0 or enemy.is_fogged:
 			continue
 		var distance: int = _combat_calc.get_distance(soldier.cell, enemy.cell)
 		if best == null or distance < best_distance or (distance == best_distance and enemy.unit_name < best.unit_name):
