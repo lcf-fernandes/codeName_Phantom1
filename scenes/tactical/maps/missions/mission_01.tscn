@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cldmudq5y5wum"]
 
 [ext_resource type="Script" uid="uid://cyispann6qj3v" path="res://scripts/tactical/grid/grid_floor.gd" id="1_ioih3"]
+[ext_resource type="Script" uid="uid://dkvor443yl141" path="res://scripts/tactical/camera/camera_pan.gd" id="2_d4kly"]
 [ext_resource type="Environment" path="res://scenes/tactical/maps/test_level_environment.tres" id="2_m3i6s"]
 [ext_resource type="Script" uid="uid://f3bihqipolar" path="res://scripts/tactical/grid/grid_manager.gd" id="3_d4kly"]
 [ext_resource type="Script" uid="uid://bavc87hjlxbbf" path="res://scripts/units/squad_spawner.gd" id="4_concj"]
@@ -34,6 +35,7 @@ transform = Transform3D(1, 0, 0, 0, 0.57357645, 0.81915206, 0, -0.81915206, 0.57
 v_offset = -1.09
 current = true
 fov = 43.8
+script = ExtResource("2_d4kly")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1636436937]
 transform = Transform3D(0.81915206, -0.46984634, 0.32898995, 0, 0.57357645, 0.81915206, -0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
