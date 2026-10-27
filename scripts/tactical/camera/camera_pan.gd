@@ -12,6 +12,8 @@ extends Camera3D
 @export var selection_controller_path: NodePath = ^"../SelectionController"
 ## Duração da centralização suave no soldado (Espaço), em segundos.
 @export var recenter_time: float = 0.25
+## Célula em que a câmera começa centralizada; (-1, -1) mantém o enquadramento da cena.
+@export var start_cell: Vector2i = Vector2i(-1, -1)
 
 var _grid_manager: GridManager
 var _selection: SelectionController
@@ -36,6 +38,17 @@ func _ready() -> void:
 	assert(hit != null, "CameraPan: o centro da tela não encontra o plano do chão.")
 	_target = hit as Vector3
 	_offset = global_position - _target
+	# Adiado: o GridManager ainda não achou o chão quando este _ready roda (a câmera vem antes dele).
+	_apply_start_cell.call_deferred()
+
+
+# Move o ponto-alvo para a célula inicial (se definida), dentro dos limites, e posiciona a câmera.
+func _apply_start_cell() -> void:
+	if start_cell == Vector2i(-1, -1):
+		return
+	var world: Vector3 = _grid_manager.cell_to_world(start_cell)
+	_target = _clamped(Vector3(world.x, 0.0, world.z))
+	global_position = _target + _offset
 
 
 func _process(delta: float) -> void:
