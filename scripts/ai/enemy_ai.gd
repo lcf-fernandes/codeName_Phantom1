@@ -42,7 +42,14 @@ func _ready() -> void:
 ## Roda o turno dos inimigos: renova os PA de todos e move um inimigo por vez, em ordem de nome.
 ## Termina quando todos agiram, ou antes, se não houver soldado vivo.
 func run_enemy_turn() -> void:
-	var enemies: Array[Unit] = _living_units(Unit.Team.ENEMY)
+	# Inimigos que não estão em alerta ficam em espera: não agem e não entram na pausa entre inimigos.
+	var enemies: Array[Unit] = []
+	var waiting: int = 0
+	for living: Unit in _living_units(Unit.Team.ENEMY):
+		if living.alerted:
+			enemies.append(living)
+		else:
+			waiting += 1
 	enemies.sort_custom(func(a: Unit, b: Unit) -> bool: return a.unit_name < b.unit_name)
 	for enemy: Unit in enemies:
 		enemy.reset_actions()
@@ -52,6 +59,7 @@ func run_enemy_turn() -> void:
 		var target: Unit = _nearest_soldier(enemy)
 		if target == null:
 			print("IA: sem soldados vivos")
+			_report_waiting(waiting)
 			return
 
 		var from_cell: Vector2i = enemy.cell
@@ -80,6 +88,14 @@ func run_enemy_turn() -> void:
 
 		if i < enemies.size() - 1:
 			await get_tree().create_timer(delay_between_enemies).timeout
+
+	_report_waiting(waiting)
+
+
+# Uma única linha no fim do turno, se algum inimigo ficou em espera (sem alerta).
+func _report_waiting(waiting: int) -> void:
+	if waiting > 0:
+		print("IA: %d inimigo(s) em espera" % waiting)
 
 
 # Depois do movimento (ou de ficar parado): ataca o alvo se ainda houver PA, o alvo estiver vivo,

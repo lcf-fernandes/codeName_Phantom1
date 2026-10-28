@@ -3,6 +3,7 @@ extends Node
 ## Atalhos de teste de vida, dano e morte:
 ## K = 1 de dano na unidade selecionada; Shift+K = 10 de dano nela;
 ## L = 1 de dano no primeiro inimigo vivo; Shift+L = 10 de dano nele.
+## J = põe em alerta os inimigos vivos do grupo 1; Shift+J = os do grupo 2.
 
 const UNITS_GROUP: StringName = &"units"
 
@@ -33,6 +34,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_L:
 			var enemy_amount: int = 10 if key_event.shift_pressed else 1
 			_damage(_first_living_enemy(), enemy_amount)
+		KEY_J:
+			_alert_cluster(2 if key_event.shift_pressed else 1)
+
+
+# Coloca em alerta todos os inimigos vivos do grupo (cluster_id) informado.
+func _alert_cluster(cluster: int) -> void:
+	for node: Node in get_tree().get_nodes_in_group(UNITS_GROUP):
+		var unit: Unit = node as Unit
+		if unit != null and unit.team == Unit.Team.ENEMY and unit.hp > 0 and unit.cluster_id == cluster:
+			unit.set_alerted(true)
+	print("Debug: grupo %d em alerta" % cluster)
 
 
 func _first_living_enemy() -> Unit:
