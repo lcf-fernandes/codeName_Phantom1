@@ -16,6 +16,8 @@ signal died(unit: Unit)
 signal cell_reached(unit: Unit, cell: Vector2i)
 ## Emitido quando o último pedido de espera do movimento (hold_move) é liberado.
 signal hold_released
+## Emitido quando a unidade entra ou sai de alerta (ver set_alerted).
+signal alert_changed(unit: Unit, value: bool)
 
 ## Nome exibido da unidade.
 @export var unit_name: String = "Unidade"
@@ -35,6 +37,8 @@ signal hold_released
 @export var attack_range: int = 5
 ## Alcance de visão, em passos de grade (usado pelo VisionSystem).
 @export var sight_range: int = 8
+## Grupo (núcleo) da unidade; inimigos do mesmo grupo compartilham o alerta.
+@export var cluster_id: int = 0
 ## Retrato exibido na faixa de retratos (opcional; sem imagem, a faixa mostra o número da unidade).
 @export var portrait: Texture2D = null
 ## Distância que o corpo avança ao atacar, em metros.
@@ -87,6 +91,9 @@ var is_overwatching: bool = false
 
 ## Verdadeiro enquanto a unidade está escondida pela névoa de guerra (ver set_fogged).
 var is_fogged: bool = false
+
+## Verdadeiro quando a unidade está em alerta (ver set_alerted).
+var alerted: bool = true
 
 # Camada de colisão original do Hitbox, guardada na primeira vez que a névoa o desliga.
 var _hitbox_layer: int = 0
@@ -244,6 +251,17 @@ func go_overwatch() -> bool:
 	spend_action(action_points)
 	print("Vigilância: %s em vigilância" % unit_name)
 	return true
+
+
+## Liga ou desliga o alerta: se o valor não mudou, não faz nada; senão atualiza `alerted`, emite
+## alert_changed e, ao entrar em alerta, imprime uma linha.
+func set_alerted(value: bool) -> void:
+	if value == alerted:
+		return
+	alerted = value
+	alert_changed.emit(self, value)
+	if value:
+		print("Alerta: %s (grupo %d) em alerta" % [unit_name, cluster_id])
 
 
 ## Gasta a vigilância (ela reagiu): desliga is_overwatching e esconde o anel laranja.
