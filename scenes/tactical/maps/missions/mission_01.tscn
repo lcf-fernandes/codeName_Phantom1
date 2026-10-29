@@ -24,6 +24,7 @@
 [ext_resource type="Script" uid="uid://buh68ovv0g2o" path="res://scripts/tactical/combat/overwatch_controller.gd" id="21_2oa7p"]
 [ext_resource type="Script" uid="uid://ciqfgd6wkdoaq" path="res://scripts/tactical/vision/vision_system.gd" id="22_hmh3s"]
 [ext_resource type="Script" uid="uid://by5oa5viela2b" path="res://scripts/tactical/vision/fog_overlay.gd" id="23_x1uk3"]
+[ext_resource type="Script" uid="uid://b84gsiwbtgykv" path="res://scripts/tactical/vision/detection_controller.gd" id="25_d4kly"]
 
 [node name="TestLevel" type="Node3D" unique_id=238378437]
 
@@ -119,3 +120,6 @@ debug_vision_report = false
 
 [node name="FogOverlay" type="Node3D" parent="." unique_id=1389819292]
 script = ExtResource("23_x1uk3")
+
+[node name="DetectionController" type="Node" parent="." unique_id=632996047]
+script = ExtResource("25_d4kly")
