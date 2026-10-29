@@ -37,6 +37,8 @@ signal alert_changed(unit: Unit, value: bool)
 @export var attack_range: int = 5
 ## Alcance de visão, em passos de grade (usado pelo VisionSystem).
 @export var sight_range: int = 8
+## Raio em que um inimigo percebe um soldado (só os inimigos usam; ver DetectionController).
+@export var detection_range: int = 8
 ## Grupo (núcleo) da unidade; inimigos do mesmo grupo compartilham o alerta.
 @export var cluster_id: int = 0
 ## Retrato exibido na faixa de retratos (opcional; sem imagem, a faixa mostra o número da unidade).

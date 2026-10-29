@@ -60,7 +60,7 @@ func _check_detection() -> void:
 			# Pode já ter sido alertado nesta chamada, junto com o grupo dele.
 			if enemy.alerted:
 				continue
-			if not _vision.can_see(enemy.cell, position, enemy.sight_range):
+			if not _vision.can_see(enemy.cell, position, enemy.detection_range):
 				continue
 			print("Detecção: %s visto por %s (grupo %d)" % [soldier.unit_name, enemy.unit_name, enemy.cluster_id])
 			_alert_group(enemy)

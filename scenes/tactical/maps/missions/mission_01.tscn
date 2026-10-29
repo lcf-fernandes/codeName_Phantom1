@@ -60,6 +60,7 @@ script = ExtResource("5_ya3rt")
 spawn_cells = Array[Vector2i]([Vector2i(5, 13), Vector2i(10, 14), Vector2i(14, 13), Vector2i(6, 27), Vector2i(9, 26), Vector2i(13, 27)])
 cluster_ids = Array[int]([1, 1, 1, 2, 2, 2])
 start_alerted = false
+detection_range = 4
 
 [node name="SelectionController" type="Node3D" parent="." unique_id=863304068]
 script = ExtResource("6_uhdkj")

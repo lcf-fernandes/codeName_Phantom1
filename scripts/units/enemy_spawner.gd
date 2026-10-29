@@ -18,6 +18,8 @@ const ENEMY_SCENE: PackedScene = preload("res://scenes/units/enemy_unit.tscn")
 @export var cluster_ids: Array[int] = []
 ## Estado de alerta com que os inimigos nascem.
 @export var start_alerted: bool = true
+## Raio de percepção (detection_range) dos inimigos; -1 mantém o padrão da unidade.
+@export var detection_range: int = -1
 
 
 func _ready() -> void:
@@ -30,6 +32,8 @@ func _ready() -> void:
 		unit.name = unit.unit_name
 		unit.cluster_id = cluster_ids[i] if i < cluster_ids.size() else 0
 		unit.alerted = start_alerted
+		if detection_range >= 0:
+			unit.detection_range = detection_range
 		add_child(unit)
 		unit.place_on_cell(grid_manager, spawn_cells[i])
 		var body: Node3D = unit.get_node("Body") as Node3D
