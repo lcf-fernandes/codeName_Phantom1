@@ -7,6 +7,8 @@ const UNITS_GROUP: StringName = &"units"
 
 ## Emitido quando o modo de mira liga ou desliga.
 signal attack_mode_changed(active: bool)
+## Emitido no início de perform_attack, antes de qualquer espera.
+signal attack_started(attacker: Unit, defender: Unit)
 
 ## Caminho até o SelectionController (soldado selecionado e sinal enemy_clicked).
 @export var selection_controller_path: NodePath = ^"../SelectionController"
@@ -268,6 +270,7 @@ func _on_enemy_clicked(enemy: Unit) -> void:
 ## diferente de (-1, -1), essa célula substitui defender.cell na chance, na cobertura, na distância
 ## e na linha de morte; a célula do atacante continua sendo attacker.cell.
 func perform_attack(attacker: Unit, defender: Unit, extra_penalty: int = 0, defender_cell: Vector2i = Vector2i(-1, -1)) -> void:
+	attack_started.emit(attacker, defender)
 	var has_given_cell: bool = defender_cell != Vector2i(-1, -1)
 	var target_cell: Vector2i = defender_cell if has_given_cell else defender.cell
 	var chance: int = _combat_calc.get_hit_chance(attacker.cell, target_cell, defender.is_defending, extra_penalty)
