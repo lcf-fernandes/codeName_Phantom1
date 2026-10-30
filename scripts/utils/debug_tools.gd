@@ -18,6 +18,8 @@ const UNITS_GROUP: StringName = &"units"
 @export var cover_map_path: NodePath = ^"../CoverMap"
 ## Caminho até o TurnManager (o teleporte só vale no turno do jogador).
 @export var turn_manager_path: NodePath = ^"../TurnManager"
+## Caminho até o EnemyAI (reação de teste com a tecla Y).
+@export var enemy_ai_path: NodePath = ^"../EnemyAI"
 ## Liga ou desliga os atalhos de teste.
 @export var debug_keys: bool = true
 
@@ -26,6 +28,7 @@ var _camera: Camera3D
 var _grid_manager: GridManager
 var _cover_map: CoverMap
 var _turn_manager: TurnManager
+var _enemy_ai: EnemyAI
 
 
 func _ready() -> void:
@@ -34,11 +37,13 @@ func _ready() -> void:
 	_grid_manager = get_node(grid_manager_path) as GridManager
 	_cover_map = get_node(cover_map_path) as CoverMap
 	_turn_manager = get_node(turn_manager_path) as TurnManager
+	_enemy_ai = get_node(enemy_ai_path) as EnemyAI
 	assert(_selection != null, "DebugTools: selection_controller_path não aponta para um SelectionController.")
 	assert(_camera != null, "DebugTools: camera_path não aponta para uma Camera3D.")
 	assert(_grid_manager != null, "DebugTools: grid_manager_path não aponta para um GridManager.")
 	assert(_cover_map != null, "DebugTools: cover_map_path não aponta para um CoverMap.")
 	assert(_turn_manager != null, "DebugTools: turn_manager_path não aponta para um TurnManager.")
+	assert(_enemy_ai != null, "DebugTools: enemy_ai_path não aponta para um EnemyAI.")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -60,6 +65,36 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_T:
 			if not key_event.shift_pressed:
 				_teleport_selected()
+		KEY_Y:
+			if not key_event.shift_pressed:
+				_react_cluster_to_selected()
+
+
+# Y: os inimigos vivos do grupo 1, em ordem de nome, reagem (scamper) ao soldado selecionado, um de
+# cada vez.
+func _react_cluster_to_selected() -> void:
+	var soldier: Unit = _selection.selected_unit
+	if soldier == null or not is_instance_valid(soldier):
+		print("Reação de teste ignorada: nenhum soldado selecionado")
+		return
+	if _turn_manager.side != TurnManager.TurnSide.PLAYER:
+		print("Reação de teste ignorada: não é o turno do jogador")
+		return
+	if _is_any_unit_moving():
+		print("Reação de teste ignorada: movimento em andamento")
+		return
+
+	var enemies: Array[Unit] = []
+	for node: Node in get_tree().get_nodes_in_group(UNITS_GROUP):
+		var unit: Unit = node as Unit
+		if unit != null and unit.team == Unit.Team.ENEMY and unit.hp > 0 and unit.cluster_id == 1:
+			enemies.append(unit)
+	enemies.sort_custom(func(a: Unit, b: Unit) -> bool: return a.unit_name < b.unit_name)
+
+	var threat_cell: Vector2i = soldier.cell
+	print("Debug: reação do grupo 1 a %s" % soldier.unit_name)
+	for enemy: Unit in enemies:
+		await _enemy_ai.scamper(enemy, threat_cell)
 
 
 # T: teleporta o soldado selecionado para a célula sob o mouse, sem gastar PA. O fim do teleporte

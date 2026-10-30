@@ -18,6 +18,10 @@ const UNITS_GROUP: StringName = &"units"
 @export var cover_map_path: NodePath = ^"../CoverMap"
 ## Caminho até o VisionSystem (linha de visão para atirar).
 @export var vision_system_path: NodePath = ^"../VisionSystem"
+## Distância mínima da ameaça (em células) para as células candidatas de scamper().
+@export var scamper_min_distance: int = 3
+## Espera no fim de cada scamper(), em segundos.
+@export var scamper_step_delay: float = 0.15
 
 var _movement_range: MovementRange
 var _combat_calc: CombatCalc
@@ -96,6 +100,80 @@ func run_enemy_turn() -> void:
 func _report_waiting(waiting: int) -> void:
 	if waiting > 0:
 		print("IA: %d inimigo(s) em espera" % waiting)
+
+
+## Reação a uma ameaça: o inimigo corre para a célula de melhor cobertura contra threat_cell entre as
+## que ele alcança (mais a atual) e ficam a scamper_min_distance ou mais dela; sem nenhuma, fica onde
+## está. Não gasta PA e não ataca. Empate: menor custo, menor distância, menor y, menor x.
+func scamper(enemy: Unit, threat_cell: Vector2i) -> void:
+	if not is_instance_valid(enemy) or enemy.hp <= 0:
+		return
+	var enemy_name: String = enemy.unit_name
+	var cluster: int = enemy.cluster_id
+	var from_cell: Vector2i = enemy.cell
+
+	var costs: Dictionary[Vector2i, int] = {from_cell: 0}
+	var reachable: Dictionary[Vector2i, int] = _movement_range.compute_reachable(enemy)
+	for cell: Vector2i in reachable.keys():
+		costs[cell] = reachable[cell]
+
+	var options: Array[Dictionary] = []
+	for cell: Vector2i in costs.keys():
+		var distance: int = _combat_calc.get_distance(cell, threat_cell)
+		if distance < scamper_min_distance:
+			continue
+		options.append({
+			"cell": cell,
+			"cover": _cover_map.get_cover_against(cell, threat_cell),
+			"distance": distance,
+			"cost": costs[cell],
+		})
+	if options.is_empty():
+		options.append({
+			"cell": from_cell,
+			"cover": _cover_map.get_cover_against(from_cell, threat_cell),
+			"distance": _combat_calc.get_distance(from_cell, threat_cell),
+			"cost": 0,
+		})
+	options.sort_custom(_scamper_option_is_better)
+
+	var destination: Vector2i = options[0]["cell"]
+	var cover_label: String = _cover_label(_cover_map.get_cover_against(destination, threat_cell))
+	if destination == from_cell:
+		print("Reação: %s (grupo %d) fica em (%d, %d) | cobertura %s" % [
+			enemy_name, cluster, from_cell.x, from_cell.y, cover_label
+		])
+	else:
+		var path: Array[Vector2i] = _movement_range.get_move_path(enemy, destination)
+		enemy.move_along_path(path)
+		await enemy.move_finished
+		print("Reação: %s (grupo %d) (%d, %d) -> (%d, %d) | %d passos | cobertura %s" % [
+			enemy_name, cluster, from_cell.x, from_cell.y, destination.x, destination.y,
+			path.size(), cover_label
+		])
+
+	await get_tree().create_timer(scamper_step_delay).timeout
+
+
+# Ordem das opções do scamper: melhor cobertura, menor custo, menor distância, menor y, menor x.
+func _scamper_option_is_better(a: Dictionary, b: Dictionary) -> bool:
+	var cover_a: int = a["cover"]
+	var cover_b: int = b["cover"]
+	if cover_a != cover_b:
+		return cover_a > cover_b
+	var cost_a: int = a["cost"]
+	var cost_b: int = b["cost"]
+	if cost_a != cost_b:
+		return cost_a < cost_b
+	var distance_a: int = a["distance"]
+	var distance_b: int = b["distance"]
+	if distance_a != distance_b:
+		return distance_a < distance_b
+	var cell_a: Vector2i = a["cell"]
+	var cell_b: Vector2i = b["cell"]
+	if cell_a.y != cell_b.y:
+		return cell_a.y < cell_b.y
+	return cell_a.x < cell_b.x
 
 
 # Depois do movimento (ou de ficar parado): ataca o alvo se ainda houver PA, o alvo estiver vivo,
