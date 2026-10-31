@@ -22,6 +22,11 @@ const UNITS_GROUP: StringName = &"units"
 @export var scamper_min_distance: int = 3
 ## Espera no fim de cada scamper(), em segundos.
 @export var scamper_step_delay: float = 0.15
+## Na aproximação (nenhuma célula permite atacar), prefere cobertura entre as células quase tão perto
+## quanto a mais próxima. Falso mantém a regra de sempre (só a mais próxima).
+@export var smart_advance: bool = true
+## Quantas células a mais que a menor distância ao alvo ainda são aceitáveis na aproximação.
+@export var advance_slack: int = 2
 
 var _movement_range: MovementRange
 var _combat_calc: CombatCalc
@@ -288,6 +293,13 @@ func _choose_closest_destination(enemy: Unit, target: Unit) -> Vector2i:
 	var current_distance: int = _combat_calc.get_distance(enemy.cell, target.cell)
 	var reachable: Dictionary[Vector2i, int] = _movement_range.compute_reachable(enemy)
 
+	# Aproximação inteligente: se houver célula mais perto do alvo, escolhe com cobertura; senão, segue
+	# a regra de sempre abaixo.
+	if smart_advance:
+		var advance_cell: Vector2i = _choose_advance_destination(enemy, target, reachable, current_distance)
+		if advance_cell != enemy.cell:
+			return advance_cell
+
 	var found: bool = false
 	var best_cell: Vector2i = enemy.cell
 	var best_distance: int = current_distance
@@ -313,3 +325,34 @@ func _is_better(distance: int, cost: int, cell: Vector2i, best_distance: int, be
 	if cell.y != best_cell.y:
 		return cell.y < best_cell.y
 	return cell.x < best_cell.x
+
+
+# Candidatos: células alcançáveis (sem a atual) mais perto do alvo que a posição atual. Aceitáveis:
+# distância <= menor distância + advance_slack. Entre eles, a de melhor cobertura contra o alvo
+# (ALTA > BAIXA > NENHUMA); empate: menor distância, menor custo, menor y, menor x. Sem candidato,
+# devolve a célula atual (quem chama segue a regra de sempre).
+func _choose_advance_destination(enemy: Unit, target: Unit, reachable: Dictionary[Vector2i, int], current_distance: int) -> Vector2i:
+	var candidates: Array[Dictionary] = []
+	var best_distance: int = current_distance
+	for cell: Vector2i in reachable.keys():
+		var distance: int = _combat_calc.get_distance(cell, target.cell)
+		if distance >= current_distance:
+			continue
+		best_distance = mini(best_distance, distance)
+		candidates.append({
+			"cell": cell,
+			"cover": _cover_map.get_cover_against(cell, target.cell),
+			"distance": distance,
+			"cost": reachable[cell],
+		})
+	if candidates.is_empty():
+		return enemy.cell
+
+	var acceptable: Array[Dictionary] = []
+	for candidate: Dictionary in candidates:
+		var candidate_distance: int = candidate["distance"]
+		if candidate_distance <= best_distance + advance_slack:
+			acceptable.append(candidate)
+	acceptable.sort_custom(_option_is_better)
+	var chosen: Vector2i = acceptable[0]["cell"]
+	return chosen
