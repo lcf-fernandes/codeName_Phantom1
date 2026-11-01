@@ -61,6 +61,8 @@ signal alert_changed(unit: Unit, value: bool)
 @export var defend_marker_color: Color = Color(0.2, 0.9, 1.0, 0.85)
 ## Cor do anel que marca a unidade em Vigilância (laranja semitransparente).
 @export var overwatch_marker_color: Color = Color(1.0, 0.6, 0.1, 0.85)
+## Cor do "!" que aparece sobre o inimigo ao entrar em alerta.
+@export var alert_marker_color: Color = Color(1.0, 0.15, 0.1, 1.0)
 ## Temporário: com ele ligado, imprime "Passo: <nome> em (x, y)" a cada célula alcançada no movimento.
 @export var debug_steps: bool = false
 
@@ -103,6 +105,9 @@ var _hitbox_layer_saved: bool = false
 
 # Anel de Vigilância, criado em código na primeira vez que é preciso.
 var _overwatch_marker: MeshInstance3D = null
+
+# "!" de alerta, criado em código na primeira vez que a unidade entra em alerta.
+var _alert_marker: Label3D = null
 
 var _grid_manager: GridManager
 
@@ -264,6 +269,40 @@ func set_alerted(value: bool) -> void:
 	alert_changed.emit(self, value)
 	if value:
 		print("Alerta: %s (grupo %d) em alerta" % [unit_name, cluster_id])
+		_show_alert_marker()
+	elif _alert_marker != null:
+		_alert_marker.visible = false
+
+
+# Mostra o "!" de alerta (criado só na primeira vez) com um pequeno "pop": escala de 0 a 1,4 e volta a
+# 1,0 em cerca de 0,3 s, com o tween do próprio Label3D.
+func _show_alert_marker() -> void:
+	if _alert_marker == null:
+		_alert_marker = _build_alert_marker()
+	_alert_marker.visible = true
+	_alert_marker.scale = Vector3.ZERO
+	var tween: Tween = _alert_marker.create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_property(_alert_marker, "scale", Vector3.ONE * 1.4, 0.18) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_alert_marker, "scale", Vector3.ONE, 0.12) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+
+# Label3D "!" a 3,1 m acima da raiz (filho da raiz, não do Body), do mesmo jeito que o rótulo de vida,
+# só maior.
+func _build_alert_marker() -> Label3D:
+	var marker: Label3D = Label3D.new()
+	marker.name = "AlertMarker"
+	marker.position = Vector3(0.0, 3.1, 0.0)
+	marker.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	marker.font_size = 128
+	marker.outline_size = 24
+	marker.outline_modulate = Color.BLACK
+	marker.modulate = alert_marker_color
+	marker.text = "!"
+	add_child(marker)
+	return marker
 
 
 ## Gasta a vigilância (ela reagiu): desliga is_overwatching e esconde o anel laranja.
@@ -377,6 +416,8 @@ func _play_death_animation() -> void:
 		hitbox.set_deferred("collision_layer", 0)
 
 	_hp_label.visible = false
+	if _alert_marker != null:
+		_alert_marker.visible = false
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	var remaining_delay: float = 0.0
