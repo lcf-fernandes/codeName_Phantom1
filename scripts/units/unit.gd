@@ -144,7 +144,16 @@ func move_along_path(path: Array[Vector2i]) -> void:
 	assert(_grid_manager != null, "Unit: chame place_on_cell antes de move_along_path.")
 
 	is_moving = true
+	# Última célula já alcançada (começa na de partida); onde o movimento termina se for bloqueado.
+	var last_reached: Vector2i = cell
 	for step: Vector2i in path:
+		# Parada de segurança: outra unidade viva ocupa a próxima célula (vale também depois de uma espera).
+		var blocker: Unit = _find_blocker(step)
+		if blocker != null:
+			print("Movimento interrompido: %s bloqueado por %s em (%d, %d)" % [unit_name, blocker.unit_name, step.x, step.y])
+			_finish_move(last_reached)
+			return
+
 		var target: Vector3 = _grid_manager.cell_to_world(step)
 		var duration: float = global_position.distance_to(target) / maxf(move_speed, 0.001)
 		var tween: Tween = create_tween()
@@ -167,6 +176,7 @@ func move_along_path(path: Array[Vector2i]) -> void:
 			is_moving = false
 			move_finished.emit(self)
 			return
+		last_reached = step
 
 	_finish_move(path[path.size() - 1])
 
@@ -190,6 +200,17 @@ func _finish_move(final_cell: Vector2i) -> void:
 	place_on_cell(_grid_manager, final_cell)
 	is_moving = false
 	move_finished.emit(self)
+
+
+# Outra unidade válida e viva do grupo "units" cuja célula lógica é `target_cell` (ou null).
+func _find_blocker(target_cell: Vector2i) -> Unit:
+	for node: Node in get_tree().get_nodes_in_group("units"):
+		var other: Unit = node as Unit
+		if other == null or other == self or not is_instance_valid(other) or other.hp <= 0:
+			continue
+		if other.cell == target_cell:
+			return other
+	return null
 
 
 ## Gasta pontos de ação (nunca fica abaixo de 0).
