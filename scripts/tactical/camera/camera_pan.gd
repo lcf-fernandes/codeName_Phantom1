@@ -14,6 +14,11 @@ extends Camera3D
 @export var recenter_time: float = 0.25
 ## Célula em que a câmera começa centralizada; (-1, -1) mantém o enquadramento da cena.
 @export var start_cell: Vector2i = Vector2i(-1, -1)
+## Duração do foco (focus_on e release_focus), em segundos.
+@export var focus_time: float = 0.5
+
+## Com locked verdadeiro, as teclas de movimento e o Espaço são ignorados (durante um foco).
+var locked: bool = false
 
 var _grid_manager: GridManager
 var _selection: SelectionController
@@ -22,6 +27,10 @@ var _target: Vector3 = Vector3.ZERO
 # Posição da câmera menos o ponto-alvo: constante durante o jogo.
 var _offset: Vector3 = Vector3.ZERO
 var _recenter_tween: Tween
+# Foco: ponto-alvo guardado antes do primeiro focus_on, para release_focus devolver a câmera.
+var _saved_target: Vector3 = Vector3.ZERO
+var _has_saved: bool = false
+var _focus_tween: Tween
 
 
 func _ready() -> void:
@@ -62,6 +71,9 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		input.x += 1.0
 
+	if locked:
+		input = Vector2.ZERO
+
 	if input != Vector2.ZERO:
 		# Mover à mão interrompe a centralização suave.
 		if _recenter_tween != null and _recenter_tween.is_valid():
@@ -79,6 +91,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event == null or not key_event.pressed or key_event.echo or key_event.keycode != KEY_SPACE:
 		return
+	if locked:
+		return
 	var unit: Unit = _selection.selected_unit
 	if unit == null or not is_instance_valid(unit):
 		return
@@ -90,6 +104,43 @@ func _unhandled_input(event: InputEvent) -> void:
 	_recenter_tween.tween_property(self, "_target", destination, recenter_time) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	get_viewport().set_input_as_handled()
+
+
+## Foco: leva o ponto-alvo ao x e z de `world_pos` (dentro dos limites) em focus_time, com suavização
+## na saída, e espera o fim. Trava o movimento manual (locked). Guarda o ponto-alvo da primeira
+## chamada para release_focus; uma chamada nova interrompe a animação anterior sem sobrescrevê-lo.
+func focus_on(world_pos: Vector3) -> void:
+	if not _has_saved:
+		_saved_target = _target
+		_has_saved = true
+	locked = true
+	_stop_tweens()
+
+	var destination: Vector3 = _clamped(Vector3(world_pos.x, 0.0, world_pos.z))
+	_focus_tween = create_tween()
+	_focus_tween.tween_property(self, "_target", destination, focus_time) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await _focus_tween.finished
+
+
+## Devolve a câmera ao ponto-alvo guardado por focus_on (se houver), espera o fim e destrava.
+func release_focus() -> void:
+	if _has_saved:
+		_stop_tweens()
+		_focus_tween = create_tween()
+		_focus_tween.tween_property(self, "_target", _saved_target, focus_time) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		await _focus_tween.finished
+		_has_saved = false
+	locked = false
+
+
+# Interrompe a centralização suave e o foco em andamento, se houver.
+func _stop_tweens() -> void:
+	if _recenter_tween != null and _recenter_tween.is_valid():
+		_recenter_tween.kill()
+	if _focus_tween != null and _focus_tween.is_valid():
+		_focus_tween.kill()
 
 
 # Limita o ponto-alvo à metade da largura e da profundidade da grade (centrada na origem).

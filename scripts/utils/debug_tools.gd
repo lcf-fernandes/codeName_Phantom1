@@ -5,6 +5,7 @@ extends Node
 ## L = 1 de dano no primeiro inimigo vivo; Shift+L = 10 de dano nele.
 ## J = põe em alerta os inimigos vivos do grupo 1; Shift+J = os do grupo 2.
 ## T = teleporta o soldado selecionado para a célula sob o mouse (sem gastar PA).
+## B = a câmera foca o centro do grupo 1 por 1,5 s e volta (só na câmera com foco).
 
 const UNITS_GROUP: StringName = &"units"
 
@@ -68,6 +69,33 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_Y:
 			if not key_event.shift_pressed:
 				_react_cluster_to_selected()
+		KEY_B:
+			if not key_event.shift_pressed:
+				_focus_cluster_demo()
+
+
+# B: a câmera foca o centro (média de x e z) dos inimigos vivos do grupo 1, espera 1,5 s e volta.
+# Só funciona com a câmera CameraPan (que tem focus_on e release_focus).
+func _focus_cluster_demo() -> void:
+	var pan: CameraPan = _camera as CameraPan
+	if pan == null:
+		print("Foco ignorado: câmera sem foco")
+		return
+
+	var sum: Vector3 = Vector3.ZERO
+	var count: int = 0
+	for node: Node in get_tree().get_nodes_in_group(UNITS_GROUP):
+		var unit: Unit = node as Unit
+		if unit != null and unit.team == Unit.Team.ENEMY and unit.hp > 0 and unit.cluster_id == 1:
+			sum += unit.global_position
+			count += 1
+	if count == 0:
+		print("Foco ignorado: nenhum inimigo vivo no grupo 1")
+		return
+
+	await pan.focus_on(Vector3(sum.x / count, 0.0, sum.z / count))
+	await get_tree().create_timer(1.5).timeout
+	await pan.release_focus()
 
 
 # Y: os inimigos vivos do grupo 1, em ordem de nome, reagem (scamper) ao soldado selecionado, um de
