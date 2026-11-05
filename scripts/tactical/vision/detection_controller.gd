@@ -15,10 +15,16 @@ const UNITS_GROUP: StringName = &"units"
 @export var attack_controller_path: NodePath = ^"../AttackController"
 ## Caminho até o EnemyAI (reação dos inimigos recém-alertados, via scamper).
 @export var enemy_ai_path: NodePath = ^"../EnemyAI"
+## Caminho até a câmera. Se for uma CameraPan, ela foca nos inimigos que reagem; senão, é ignorada.
+@export var camera_path: NodePath = ^"../Camera"
+## Tempo que a câmera fica parada nos inimigos depois da reação de um evento, em segundos.
+@export var focus_hold_time: float = 0.4
 
 var _vision: VisionSystem
 var _attack_controller: AttackController
 var _enemy_ai: EnemyAI
+# Câmera com focus_on/release_focus (CameraPan); null se não existir ou não tiver esses métodos.
+var _camera: CameraPan
 # Verdadeiro enquanto uma reação está rodando (uma de cada vez).
 var _reacting: bool = false
 
@@ -27,6 +33,8 @@ func _ready() -> void:
 	_vision = get_node(vision_system_path) as VisionSystem
 	_attack_controller = get_node(attack_controller_path) as AttackController
 	_enemy_ai = get_node(enemy_ai_path) as EnemyAI
+	# Sem assert: sem a câmera (ou numa cena cuja câmera não tem foco), a reação segue sem foco.
+	_camera = get_node_or_null(camera_path) as CameraPan
 	assert(_vision != null, "DetectionController: vision_system_path não aponta para um VisionSystem.")
 	assert(_attack_controller != null, "DetectionController: attack_controller_path não aponta para um AttackController.")
 	assert(_enemy_ai != null, "DetectionController: enemy_ai_path não aponta para um EnemyAI.")
@@ -143,12 +151,28 @@ func _run_reactions(events: Array[Dictionary], holder: Unit) -> void:
 				soldier.is_moving = true
 				marked.append(soldier)
 
+	var focused: bool = false
 	for event: Dictionary in events:
 		var enemies: Array[Unit] = event["enemies"]
 		var cell: Vector2i = event["cell"]
+
+		# Antes do primeiro scamper do evento, a câmera foca o centro dos inimigos que vão reagir.
+		var focus_point: Variant = _enemies_center(enemies)
+		var use_focus: bool = _camera != null and focus_point != null
+		if use_focus:
+			focused = true
+			await _camera.focus_on(focus_point as Vector3)
+
 		for enemy: Unit in enemies:
 			if is_instance_valid(enemy) and enemy.hp > 0:
 				await _enemy_ai.scamper(enemy, cell)
+
+		if use_focus:
+			await get_tree().create_timer(focus_hold_time).timeout
+
+	# Depois de todos os eventos a câmera volta e só então o holder é solto.
+	if focused:
+		await _camera.release_focus()
 
 	for soldier: Unit in marked:
 		if is_instance_valid(soldier):
@@ -156,3 +180,16 @@ func _run_reactions(events: Array[Dictionary], holder: Unit) -> void:
 	_reacting = false
 	if holder != null and is_instance_valid(holder):
 		holder.release_move()
+
+
+# Centro (média de x e z das global_position) dos inimigos válidos e vivos da lista; null se não houver.
+func _enemies_center(enemies: Array[Unit]) -> Variant:
+	var sum: Vector3 = Vector3.ZERO
+	var count: int = 0
+	for enemy: Unit in enemies:
+		if is_instance_valid(enemy) and enemy.hp > 0:
+			sum += enemy.global_position
+			count += 1
+	if count == 0:
+		return null
+	return Vector3(sum.x / count, 0.0, sum.z / count)
