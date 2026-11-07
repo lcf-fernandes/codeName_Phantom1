@@ -26,6 +26,7 @@
 [ext_resource type="Script" uid="uid://by5oa5viela2b" path="res://scripts/tactical/vision/fog_overlay.gd" id="23_x1uk3"]
 [ext_resource type="Script" uid="uid://b84gsiwbtgykv" path="res://scripts/tactical/vision/detection_controller.gd" id="25_d4kly"]
 [ext_resource type="Script" uid="uid://cd6glk0e5s7ie" path="res://scripts/ui/end_turn_button.gd" id="26_concj"]
+[ext_resource type="Script" uid="uid://brt0yd5wyn2m6" path="res://scripts/ui/soldier_cycle.gd" id="27_ya3rt"]
 
 [node name="TestLevel" type="Node3D" unique_id=238378437]
 
@@ -128,3 +129,6 @@ script = ExtResource("25_d4kly")
 
 [node name="EndTurnButton" type="Node" parent="." unique_id=826163244]
 script = ExtResource("26_concj")
+
+[node name="SoldierCycle" type="Node" parent="." unique_id=1921402843]
+script = ExtResource("27_ya3rt")
