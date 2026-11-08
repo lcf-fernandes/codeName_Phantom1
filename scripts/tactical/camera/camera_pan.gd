@@ -16,6 +16,13 @@ extends Camera3D
 @export var start_cell: Vector2i = Vector2i(-1, -1)
 ## Duração do foco (focus_on e release_focus), em segundos.
 @export var focus_time: float = 0.5
+## Zoom mínimo (câmera mais perto) e máximo (mais longe); 1,0 é o enquadramento original.
+@export var zoom_min: float = 0.5
+@export var zoom_max: float = 1.4
+## Quanto cada passo da roda do mouse muda o zoom.
+@export var zoom_step: float = 0.1
+## Rapidez com que o zoom segue o alvo (maior = mais rápido).
+@export var zoom_speed: float = 10.0
 
 ## Com locked verdadeiro, as teclas de movimento e o Espaço são ignorados (durante um foco).
 var locked: bool = false
@@ -31,6 +38,9 @@ var _recenter_tween: Tween
 var _saved_target: Vector3 = Vector3.ZERO
 var _has_saved: bool = false
 var _focus_tween: Tween
+# Zoom: fator aplicado ao deslocamento da câmera (1,0 = original); _zoom segue _zoom_goal.
+var _zoom_goal: float = 1.0
+var _zoom: float = 1.0
 
 
 func _ready() -> void:
@@ -57,7 +67,7 @@ func _apply_start_cell() -> void:
 		return
 	var world: Vector3 = _grid_manager.cell_to_world(start_cell)
 	_target = _clamped(Vector3(world.x, 0.0, world.z))
-	global_position = _target + _offset
+	global_position = _target + _offset * _zoom
 
 
 func _process(delta: float) -> void:
@@ -82,12 +92,23 @@ func _process(delta: float) -> void:
 		_target.x += input.x * pan_speed * delta
 		_target.z += input.y * pan_speed * delta
 
+	_zoom = lerpf(_zoom, _zoom_goal, clampf(zoom_speed * delta, 0.0, 1.0))
 	_target = _clamped(_target)
-	global_position = _target + _offset
+	global_position = _target + _offset * _zoom
 
-
-# Espaço: centraliza suavemente no soldado selecionado (sem seleção, não faz nada).
+# Roda do mouse: zoom (ignorado durante um foco). Espaço: centraliza suavemente no soldado
+# selecionado (sem seleção, não faz nada).
 func _unhandled_input(event: InputEvent) -> void:
+	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+	if mouse_event != null and mouse_event.pressed:
+		if locked:
+			return
+		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_zoom_goal = clampf(_zoom_goal - zoom_step, zoom_min, zoom_max)
+		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom_goal = clampf(_zoom_goal + zoom_step, zoom_min, zoom_max)
+		return
+
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event == null or not key_event.pressed or key_event.echo or key_event.keycode != KEY_SPACE:
 		return
