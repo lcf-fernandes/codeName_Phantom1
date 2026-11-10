@@ -66,17 +66,19 @@ func _ready() -> void:
 
 ## Células alcançáveis pela unidade, com o custo (passos) de cada uma.
 ## A célula de origem não entra no resultado.
-func compute_reachable(unit: Unit) -> Dictionary[Vector2i, int]:
+## Com max_cost >= 0, esse valor substitui unit.move_range (-1 mantém o alcance normal).
+func compute_reachable(unit: Unit, max_cost: int = -1) -> Dictionary[Vector2i, int]:
 	var parents: Dictionary[Vector2i, Vector2i] = {}
-	return _search(unit, parents)
+	return _search(unit, parents, max_cost)
 
 
 ## Caminho mais curto até a célula, da primeira célula depois da origem até o destino.
 ## Devolve uma lista vazia se a célula não for alcançável. O tamanho do caminho é igual ao custo.
-func get_move_path(unit: Unit, cell: Vector2i) -> Array[Vector2i]:
+## `max_cost` funciona como em compute_reachable.
+func get_move_path(unit: Unit, cell: Vector2i, max_cost: int = -1) -> Array[Vector2i]:
 	var path: Array[Vector2i] = []
 	var parents: Dictionary[Vector2i, Vector2i] = {}
-	var reachable: Dictionary[Vector2i, int] = _search(unit, parents)
+	var reachable: Dictionary[Vector2i, int] = _search(unit, parents, max_cost)
 	if not reachable.has(cell):
 		return path
 
@@ -94,7 +96,8 @@ func hide_range() -> void:
 
 ## Busca em largura a partir da célula da unidade. Devolve célula -> custo e preenche
 ## parents com a célula de onde cada célula foi alcançada (para reconstruir caminhos).
-func _search(unit: Unit, parents: Dictionary[Vector2i, Vector2i]) -> Dictionary[Vector2i, int]:
+func _search(unit: Unit, parents: Dictionary[Vector2i, Vector2i], max_cost: int = -1) -> Dictionary[Vector2i, int]:
+	var limit: int = unit.move_range if max_cost < 0 else max_cost
 	var reachable: Dictionary[Vector2i, int] = {}
 	var occupied: Dictionary[Vector2i, bool] = _get_occupied_cells()
 	var costs: Dictionary[Vector2i, int] = {unit.cell: 0}
@@ -105,7 +108,7 @@ func _search(unit: Unit, parents: Dictionary[Vector2i, Vector2i]) -> Dictionary[
 		var current: Vector2i = queue[head]
 		head += 1
 		var cost: int = costs[current]
-		if cost >= unit.move_range:
+		if cost >= limit:
 			continue
 		for direction: Vector2i in DIRECTIONS:
 			var next: Vector2i = current + direction

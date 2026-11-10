@@ -27,6 +27,8 @@ signal alert_changed(unit: Unit, value: bool)
 @export var team: Team = Team.SQUAD
 ## Alcance de movimento, em passos (células) nas 4 direções.
 @export var move_range: int = 5
+## Alcance da corrida (o movimento que gasta todas as ações), em passos de grade.
+@export var dash_range: int = 10
 ## Velocidade do movimento animado, em metros por segundo.
 @export var move_speed: float = 8.0
 ## Máximo de pontos de ação (PA) por turno.
