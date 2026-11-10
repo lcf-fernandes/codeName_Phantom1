@@ -25,6 +25,8 @@ const UNITS_GROUP: StringName = &"units"
 @export var high_cover_color: Color = Color(0.2, 0.9, 0.3, 0.45)
 ## Caminho até o CombatCalc (distância até o inimigo de referência).
 @export var combat_calc_path: NodePath = ^"../CombatCalc"
+## Cor dos quadrados da zona de corrida (células além do alcance normal, gastando todas as ações).
+@export var dash_color: Color = Color(1.0, 0.55, 0.1, 0.45)
 
 ## Legenda das cores dos quadrados; vazia quando não há nada a explicar. Lida pelo TurnHud.
 var legend_text: String = ""
@@ -36,6 +38,7 @@ var _tile_mesh: PlaneMesh
 var _tile_material: StandardMaterial3D
 var _low_material: StandardMaterial3D
 var _high_material: StandardMaterial3D
+var _dash_material: StandardMaterial3D
 var _tiles: Array[MeshInstance3D] = []
 
 
@@ -59,6 +62,7 @@ func _ready() -> void:
 	_tile_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_low_material = _make_tile_material(low_cover_color)
 	_high_material = _make_tile_material(high_cover_color)
+	_dash_material = _make_tile_material(dash_color)
 
 	selection.unit_selected.connect(_on_unit_selected)
 	selection.selection_cleared.connect(_on_selection_cleared)
@@ -158,7 +162,24 @@ func _on_unit_selected(unit: Unit) -> void:
 		for cell: Vector2i in cells:
 			covers[cell] = _cover_map.get_cover_against(cell, reference.cell)
 
-	_show_tiles(cells, covers)
+	# Zona de corrida: soldado com 2 ou mais PA e dash_range maior que move_range. As células com custo
+	# acima de move_range ganham a cor de corrida (sem cobertura); as demais ficam como acima.
+	var dash_active: bool = unit.team == Unit.Team.SQUAD and unit.action_points >= 2 and unit.dash_range > unit.move_range
+	var dash_cells: Array[Vector2i] = []
+	if dash_active:
+		var dash_reachable: Dictionary[Vector2i, int] = compute_reachable(unit, unit.dash_range)
+		for dash_cell: Vector2i in dash_reachable.keys():
+			if dash_reachable[dash_cell] > unit.move_range:
+				dash_cells.append(dash_cell)
+		dash_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			if dash_reachable[a] != dash_reachable[b]:
+				return dash_reachable[a] < dash_reachable[b]
+			if a.x != b.x:
+				return a.x < b.x
+			return a.y < b.y
+		)
+
+	_show_tiles(cells, covers, dash_cells)
 	legend_text = ""
 	if reference != null:
 		legend_text = "Referência: %s · amarelo: cobertura baixa · verde: cobertura alta" % reference.unit_name
@@ -168,6 +189,8 @@ func _on_unit_selected(unit: Unit) -> void:
 		parts.append("(%d, %d):%d" % [c.x, c.y, reachable[c]])
 	print("Alcance de %s: %d células" % [unit.unit_name, cells.size()])
 	print("  Células (x, y):custo -> %s" % ", ".join(parts))
+	if dash_active:
+		print("Corrida de %s: %d células" % [unit.unit_name, dash_cells.size()])
 	if reference != null:
 		_print_cover_summary(reference, covers)
 
@@ -235,12 +258,14 @@ func _make_tile_material(color: Color) -> StandardMaterial3D:
 
 
 ## Mostra um quadrado em cada célula da lista e esconde os que sobrarem. A cor de cada quadrado
-## depende da cobertura da célula em covers (sem entrada: azul). Sem células, a legenda some.
-func _show_tiles(cells: Array[Vector2i], covers: Dictionary[Vector2i, CoverMap.CoverType] = {}) -> void:
+## depende da cobertura da célula em covers (sem entrada: azul). As células de dash_cells (zona de
+## corrida) vem depois e usam dash_color. Sem células, a legenda some.
+func _show_tiles(cells: Array[Vector2i], covers: Dictionary[Vector2i, CoverMap.CoverType] = {}, dash_cells: Array[Vector2i] = []) -> void:
 	if cells.is_empty():
 		legend_text = ""
 
-	while _tiles.size() < cells.size():
+	var total: int = cells.size() + dash_cells.size()
+	while _tiles.size() < total:
 		var tile: MeshInstance3D = MeshInstance3D.new()
 		tile.mesh = _tile_mesh
 		tile.material_override = _tile_material
@@ -254,6 +279,10 @@ func _show_tiles(cells: Array[Vector2i], covers: Dictionary[Vector2i, CoverMap.C
 			var cover: CoverMap.CoverType = covers[cells[i]] if covers.has(cells[i]) else CoverMap.CoverType.NONE
 			tile.material_override = _material_for(cover)
 			tile.global_position = _grid_manager.cell_to_world(cells[i]) + Vector3(0.0, tile_height, 0.0)
+			tile.visible = true
+		elif i < total:
+			tile.material_override = _dash_material
+			tile.global_position = _grid_manager.cell_to_world(dash_cells[i - cells.size()]) + Vector3(0.0, tile_height, 0.0)
 			tile.visible = true
 		else:
 			tile.visible = false
