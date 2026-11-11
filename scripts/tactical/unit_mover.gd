@@ -66,9 +66,19 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 		return
 
 	var path: Array[Vector2i] = _movement_range.get_move_path(unit, cell)
+	# Fora do alcance normal: corrida (gasta todas as ações), se o soldado tiver 2 ou mais PA e
+	# dash_range maior que move_range e a célula estiver na zona de corrida.
+	var is_dash: bool = false
+	if path.is_empty() and unit.team == Unit.Team.SQUAD and unit.action_points >= 2 and unit.dash_range > unit.move_range:
+		path = _movement_range.get_move_path(unit, cell, unit.dash_range)
+		is_dash = not path.is_empty()
 	if path.is_empty():
 		_selection.clear_selection()
 		return
+
+	if is_dash:
+		unit.spend_action(unit.action_points)
+		print("Corrida: %s gasta todas as ações" % unit.unit_name)
 
 	var parts: PackedStringArray = PackedStringArray()
 	parts.append("(%d, %d)" % [unit.cell.x, unit.cell.y])
@@ -76,8 +86,9 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 		parts.append("(%d, %d)" % [step.x, step.y])
 	print("Caminho: %s" % " -> ".join(parts))
 
-	# Cada movimento gasta 1 PA, descontado no início.
-	unit.spend_action(1)
+	# Cada movimento normal gasta 1 PA, descontado no início (a corrida já gastou todos acima).
+	if not is_dash:
+		unit.spend_action(1)
 	# Durante o movimento, esconde o marcador amarelo e os quadrados azuis.
 	_selection.hide_marker()
 	_movement_range.hide_range()
