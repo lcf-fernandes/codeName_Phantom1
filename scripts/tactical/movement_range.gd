@@ -104,6 +104,11 @@ func _search(unit: Unit, parents: Dictionary[Vector2i, Vector2i], max_cost: int 
 	var limit: int = unit.move_range if max_cost < 0 else max_cost
 	var reachable: Dictionary[Vector2i, int] = {}
 	var occupied: Dictionary[Vector2i, bool] = _get_occupied_cells()
+	if unit.team == Unit.Team.SQUAD:
+		for node: Node in get_tree().get_nodes_in_group("units"):
+			var other: Unit = node as Unit
+			if other != null and other.team == Unit.Team.ENEMY and other.is_fogged:
+				occupied.erase(other.cell)
 	var costs: Dictionary[Vector2i, int] = {unit.cell: 0}
 	var queue: Array[Vector2i] = [unit.cell]
 	var head: int = 0
