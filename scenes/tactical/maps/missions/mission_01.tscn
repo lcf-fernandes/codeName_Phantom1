@@ -29,6 +29,7 @@
 [ext_resource type="Script" uid="uid://brt0yd5wyn2m6" path="res://scripts/ui/soldier_cycle.gd" id="27_ya3rt"]
 [ext_resource type="Script" uid="uid://lfukd6dj4f0h" path="res://scripts/ui/turn_banner.gd" id="28_uhdkj"]
 [ext_resource type="Script" uid="uid://bjdo8uwdeyabx" path="res://scripts/ui/help_overlay.gd" id="29_g0h3a"]
+[ext_resource type="Script" uid="uid://bdsoh08i8hyq" path="res://scripts/ui/result_screen.gd" id="30_err1o"]
 
 [node name="TestLevel" type="Node3D" unique_id=238378437]
 
@@ -140,3 +141,6 @@ script = ExtResource("28_uhdkj")
 
 [node name="HelpOverlay" type="Node" parent="." unique_id=1542244234]
 script = ExtResource("29_g0h3a")
+
+[node name="ResultScreen" type="Node" parent="." unique_id=1292992788]
+script = ExtResource("30_err1o")
